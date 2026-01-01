@@ -219,9 +219,9 @@ ENCRYPTION_KEY_PATH=keys/master.key
 
 ## 👨‍💻 Project Info
 - **Project Name**: SECURE EDGE VISION SYSTEM
-- **Researcher**: Bayu Cahyo
+- **Researcher**: MUHAMMAD BAYU SEGARA
 - **Category**: Undergraduate Thesis (Skripsi)
-- **University**: Universitas Nasional (UNAS)
+- **University**: Universitas Amikom Yogyakarta
 
 ---
 <div align="center">
