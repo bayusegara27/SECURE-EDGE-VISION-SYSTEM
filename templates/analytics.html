@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics - Secure Edge</title>
+    <link rel="stylesheet" href="/static/css/shared.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --chart-blue: #3b82f6;
+            --chart-green: #10b981;
+            --chart-yellow: #f59e0b;
+            --chart-red: #ef4444;
+            --chart-purple: #8b5cf6;
+        }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            padding: 24px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        @media (max-width: 1100px) {
+            .analytics-grid { grid-template-columns: 1fr; }
+        }
+
+        .stat-card {
+            background: var(--bg-panel);
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
+        .stat-card h3 {
+            margin: 0 0 20px 0;
+            font-size: 13px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 280px;
+            width: 100%;
+        }
+
+        .health-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            flex: 1;
+        }
+
+        .health-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+
+        .health-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 4px;
+        }
+
+        .health-label {
+            font-size: 11px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+        }
+
+        .storage-info {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            font-size: 13px;
+        }
+
+        .badge-positive { color: #10b981; }
+        .badge-warning { color: #f59e0b; }
+        .badge-danger { color: #ef4444; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-logo">
+                <i data-lucide="shield" size="20" color="white"></i>
+            </div>
+            <div class="sidebar-nav">
+                <a href="/" class="nav-item" title="Live View">
+                    <i data-lucide="monitor" size="20"></i>
+                </a>
+                <a href="/gallery" class="nav-item" title="Recordings">
+                    <i data-lucide="folder" size="20"></i>
+                </a>
+                <a href="/analytics" class="nav-item active" title="Analytics">
+                    <i data-lucide="bar-chart-2" size="20"></i>
+                </a>
+                <a href="/decrypt" class="nav-item" title="Decrypt Evidence">
+                    <i data-lucide="lock" size="20"></i>
+                </a>
+            </div>
+            <div class="sidebar-bottom">
+                <div class="nav-item" title="Settings">
+                    <i data-lucide="settings" size="20"></i>
+                </div>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <header class="header">
+                <div class="header-title">
+                    <i data-lucide="bar-chart-2" size="18"></i>
+                    Intelligence Analytics
+                    <span style="margin-left: 20px; color: var(--text-dim); font-weight: normal; font-size: 13px;">Behavioral patterns and system metrics</span>
+                </div>
+                <div class="header-right">
+                    <button class="toolbar-btn" onclick="loadAnalytics()">
+                        <i data-lucide="refresh-cw" size="14"></i>
+                        Refresh
+                    </button>
+                </div>
+            </header>
+
+            <div class="analytics-grid" style="overflow-y: auto;">
+                <!-- Detection Trends -->
+                <div class="stat-card">
+                    <h3><i data-lucide="trending-up" size="18"></i> Hourly Detection Intensity (Last 24h)</h3>
+                    <div class="chart-container">
+                        <canvas id="trendsChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Storage Distribution -->
+                <div class="stat-card">
+                    <h3><i data-lucide="database" size="18"></i> Storage Distribution & Forecast</h3>
+                    <div class="chart-container">
+                        <canvas id="storageChart"></canvas>
+                    </div>
+                    <div class="storage-info" id="storageSummary">
+                        <!-- Loaded via JS -->
+                    </div>
+                    <div class="health-item" style="margin-top: 15px; background: rgba(59, 130, 246, 0.05);">
+                        <div class="health-label">Estimated Days Remaining</div>
+                        <div class="health-value" id="valForecast" style="font-size: 20px;">--</div>
+                    </div>
+                </div>
+
+                <!-- System Health & Forensic Count -->
+                <div class="stat-card">
+                    <h3><i data-lucide="activity" size="18"></i> System Metrics</h3>
+                    <div class="health-grid" id="healthGrid">
+                        <div class="health-item">
+                            <div class="health-value" id="valDisk">--</div>
+                            <div class="health-label">Free Space (GB)</div>
+                        </div>
+                        <div class="health-item">
+                            <div class="health-value text-accent" id="valDetections">--</div>
+                            <div class="health-label">Total Events</div>
+                        </div>
+                        <div class="health-item">
+                            <div class="health-value" id="valEvidence">--</div>
+                            <div class="health-label">Evidence Files</div>
+                        </div>
+                        <div class="health-item">
+                            <div class="health-value" id="valDiskPct">--</div>
+                            <div class="health-label">Disk Usage %</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detection Classification -->
+                <div class="stat-card">
+                    <h3><i data-lucide="users" size="18"></i> Behavioral Classification</h3>
+                    <div class="chart-container" style="height: 200px;">
+                        <canvas id="classChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Camera Activity -->
+                <div class="stat-card">
+                    <h3><i data-lucide="video" size="18"></i> Activity Density by Node</h3>
+                    <div class="chart-container">
+                        <canvas id="cameraChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Recent Investigative Logs (FULL WIDTH) -->
+                <div class="stat-card" style="grid-column: 1 / -1;">
+                    <h3><i data-lucide="list" size="18"></i> Recent Activity</h3>
+                    <div style="max-height: 300px; overflow-y: auto; margin-top: 10px;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                            <thead style="position: sticky; top: 0; background: var(--bg-panel); color: var(--text-dim);">
+                                <tr>
+                                    <th style="text-align: left; padding: 12px; border-bottom: 1px solid var(--border);">Timestamp</th>
+                                    <th style="text-align: left; padding: 12px; border-bottom: 1px solid var(--border);">Node</th>
+                                    <th style="text-align: left; padding: 12px; border-bottom: 1px solid var(--border);">Classification</th>
+                                    <th style="text-align: left; padding: 12px; border-bottom: 1px solid var(--border);">Confidence</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logTableBody" style="color: var(--text);">
+                                <!-- Loaded via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        
+        // Chart Instances
+        let trendsChart, storageChart, cameraChart, classChart;
+
+        async function loadAnalytics() {
+            try {
+                const res = await fetch('/api/analytics');
+                const data = await res.json();
+                
+                renderTrends(data.trends);
+                renderStorage(data.storage);
+                renderHealth(data.health, data.storage);
+                renderClassification(data.classification);
+                renderCameraActivity(data.camera_activity);
+                renderLogs(data.recent_logs);
+            } catch (e) {
+                console.error("Failed to load analytics:", e);
+            }
+        }
+
+        function renderTrends(trends) {
+            const ctx = document.getElementById('trendsChart').getContext('2d');
+            
+            if (trendsChart) trendsChart.destroy();
+            
+            trendsChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: trends.labels,
+                    datasets: [{
+                        label: 'Detections',
+                        data: trends.values,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 2,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function renderStorage(storage) {
+            const ctx = document.getElementById('storageChart').getContext('2d');
+            const cams = Object.keys(storage.by_camera);
+            const sizes = Object.values(storage.by_camera);
+
+            if (storageChart) storageChart.destroy();
+
+            storageChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: cams,
+                    datasets: [{
+                        data: sizes,
+                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { 
+                            position: 'right', 
+                            labels: { color: '#94a3b8', boxWidth: 10, font: { size: 10 } } 
+                        } 
+                    }
+                }
+            });
+
+            document.getElementById('storageSummary').innerHTML = `
+                <div style="display: flex; flex-direction: column; gap: 5px; width: 100%;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Public & Evidence: <strong>${(storage.total_mb/1024).toFixed(2)} GB</strong></span>
+                        <span>Limit: <strong>${storage.max_gb} GB</strong></span>
+                    </div>
+                    <div style="height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; position: relative;">
+                        <div style="position: absolute; left: 0; top: 0; height: 100%; width: ${Math.min((storage.total_mb/1024)/storage.max_gb * 100, 100)}%; background: var(--accent); border-radius: 3px;"></div>
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-dim); margin-top: 5px;">
+                        Usage Velocity: <strong>${storage.hourly_rate_mb} MB/hr</strong>
+                    </div>
+                </div>
+            `;
+            document.getElementById('valForecast').textContent = `${storage.days_left} Days`;
+        }
+
+        function renderHealth(health, storage) {
+            document.getElementById('valDisk').textContent = health.disk_free_gb.toFixed(1);
+            document.getElementById('valDetections').textContent = health.total_detections;
+            document.getElementById('valEvidence').textContent = health.evidence_files;
+            document.getElementById('valDiskPct').textContent = `${health.disk_percent}%`;
+            
+            const diskValue = document.getElementById('valDiskPct');
+            if (health.disk_percent > 90) diskValue.style.color = '#ef4444';
+            else if (health.disk_percent > 70) diskValue.style.color = '#f59e0b';
+            else diskValue.style.color = '#10b981';
+        }
+
+        function renderClassification(classification) {
+            const ctx = document.getElementById('classChart').getContext('2d');
+            const labels = Object.keys(classification);
+            const values = Object.values(classification);
+
+            if (classChart) classChart.destroy();
+
+            classChart = new Chart(ctx, {
+                type: 'bar',
+                indexAxis: 'y',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: '#8b5cf6',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
+                        y: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function renderCameraActivity(activity) {
+            const ctx = document.getElementById('cameraChart').getContext('2d');
+            
+            if (cameraChart) cameraChart.destroy();
+
+            cameraChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(activity),
+                    datasets: [{
+                        label: 'Events',
+                        data: Object.values(activity),
+                        backgroundColor: 'rgba(123, 92, 246, 0.4)',
+                        borderColor: '#8b5cf6',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function renderLogs(logs) {
+            const body = document.getElementById('logTableBody');
+            body.innerHTML = '';
+            
+            if (!logs || logs.length === 0) {
+                body.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: var(--text-dim);">No investigative activity recorded in metadata.</td></tr>';
+                return;
+            }
+
+            logs.forEach(log => {
+                const row = document.createElement('tr');
+                row.style.borderBottom = '1px solid rgba(255,255,255,0.02)';
+                row.innerHTML = `
+                    <td style="padding: 12px;">${log.timestamp}</td>
+                    <td style="padding: 12px; font-family: monospace; color: var(--accent);">${log.node}</td>
+                    <td style="padding: 12px;">${log.class}</td>
+                    <td style="padding: 12px;">
+                        <span style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; padding: 2px 8px; border-radius: 4px; font-size: 11px;">
+                            ${log.conf}
+                        </span>
+                    </td>
+                `;
+                body.appendChild(row);
+            });
+        }
+
+        // Initial Load
+        loadAnalytics();
+        setInterval(loadAnalytics, 30000); // Auto refresh every 30s
+    </script>
+</body>
+</html>

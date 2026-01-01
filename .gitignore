@@ -1,0 +1,125 @@
+# ============================================
+# Secure Edge Vision System - .gitignore
+# ============================================
+
+# ============================================
+# Python
+# ============================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+.venv/
+ENV/
+env/
+.env.local
+
+# ============================================
+# IDE & Editor
+# ============================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# ============================================
+# SECURITY - CRITICAL!
+# ============================================
+# Encryption keys - NEVER commit these!
+keys/master.key
+keys/backups/
+keys/exports/
+
+# Environment file with secrets
+.env
+
+# ============================================
+# Recordings & Evidence
+# ============================================
+recordings/public/*.mp4
+recordings/evidence/*.enc
+recordings/**/*.mp4
+recordings/**/*.enc
+
+# ============================================
+# AI Models (large files)
+# ============================================
+models/*.pt
+models/*.onnx
+models/*.engine
+*.pt
+*.pth
+*.onnx
+
+# ============================================
+# Logs & Cache
+# ============================================
+*.log
+logs/
+.cache/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# ============================================
+# OS Generated
+# ============================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ============================================
+# Temporary Files
+# ============================================
+*.tmp
+*.temp
+*.bak
+*.swp
+tmp/
+temp/
+
+# ============================================
+# Jupyter Notebook
+# ============================================
+.ipynb_checkpoints/
+*.ipynb
+
+# ============================================
+# Keep these directories (with .gitkeep)
+# ============================================
+!keys/.gitkeep
+!recordings/public/.gitkeep
+!recordings/evidence/.gitkeep
+!models/.gitkeep

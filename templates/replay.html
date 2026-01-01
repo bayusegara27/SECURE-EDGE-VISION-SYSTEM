@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SECURE EDGE | Replay</title>
+    <link rel="stylesheet" href="/static/css/shared.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .replay-info {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+        .replay-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .replay-date {
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            padding: 16px 20px;
+        }
+        .info-item {
+            background: var(--bg-card);
+            padding: 12px;
+            border-radius: 6px;
+        }
+        .info-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 4px;
+        }
+        .info-value {
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .info-value.verified {
+            color: var(--success);
+        }
+        .panel-footer {
+            padding: 16px 20px;
+            margin-top: auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="sidebar-logo">
+            <i data-lucide="shield" size="20" color="white"></i>
+        </div>
+        <div class="sidebar-nav">
+            <a href="/" class="nav-item" title="Live View">
+                <i data-lucide="monitor" size="20"></i>
+            </a>
+            <a href="/gallery" class="nav-item active" title="Recordings">
+                <i data-lucide="folder" size="20"></i>
+            </a>
+            <a href="/analytics" class="nav-item" title="Analytics">
+                <i data-lucide="bar-chart-2" size="20"></i>
+            </a>
+            <a href="/decrypt" class="nav-item" title="Decrypt Evidence">
+                <i data-lucide="lock" size="20"></i>
+            </a>
+        </div>
+        <div class="sidebar-bottom">
+            <div class="nav-item" title="Settings">
+                <i data-lucide="settings" size="20"></i>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-title">
+                <a href="/gallery" style="color: var(--text-dim); text-decoration: none; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="arrow-left" size="18"></i>
+                    Back
+                </a>
+                <span style="margin: 0 12px; color: var(--border);">|</span>
+                <i data-lucide="play-circle" size="18"></i>
+                {{ filename }}
+            </div>
+        </header>
+
+        <!-- Content -->
+        <div class="content-area">
+            <!-- Left Panel - File List -->
+            <div class="panel-left">
+                <div class="panel-header">
+                    <i data-lucide="list" size="16"></i>
+                    Other Recordings
+                </div>
+                <div class="panel-content">
+                    <div class="file-list" id="fileList"></div>
+                </div>
+            </div>
+
+            <!-- Video Player -->
+            <div class="panel-main">
+                <div class="video-container">
+                    <video id="mainVideo" controls autoplay>
+                        <source src="/replay/{{ filename }}" type="video/mp4">
+                    </video>
+                </div>
+            </div>
+
+            <!-- Right Info Panel -->
+            <div class="panel-left" style="width: 260px; border-left: 1px solid var(--border); border-right: none;">
+                <div class="replay-info">
+                    <div class="replay-title">{{ filename }}</div>
+                    <div class="replay-date" id="videoDate">-</div>
+                </div>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Resolution</div>
+                        <div class="info-value" id="resolution">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Frame Rate</div>
+                        <div class="info-value">30 FPS</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Duration</div>
+                        <div class="info-value" id="duration">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Status</div>
+                        <div class="info-value verified">
+                            <i data-lucide="check-circle" size="14" style="display: inline;"></i>
+                            Verified
+                        </div>
+                    </div>
+                </div>
+                <div class="panel-footer">
+                    <button class="btn btn-primary" style="width: 100%;" onclick="downloadVideo()">
+                        <i data-lucide="download" size="16"></i>
+                        Download MP4
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        const filename = "{{ filename }}";
+        const video = document.getElementById('mainVideo');
+
+        // Video meta
+        video.onloadedmetadata = () => {
+            document.getElementById('resolution').textContent = video.videoWidth + ' x ' + video.videoHeight;
+            const mins = Math.floor(video.duration / 60);
+            const secs = Math.floor(video.duration % 60);
+            document.getElementById('duration').textContent = mins + ':' + secs.toString().padStart(2, '0');
+        };
+
+        // Load file list
+        async function loadFiles() {
+            try {
+                const res = await fetch('/api/recordings');
+                const data = await res.json();
+                const files = data.recordings || [];
+
+                document.getElementById('fileList').innerHTML = files.slice(0, 20).map(f => `
+                    <a href="/replay-page/${f.filename}" class="file-item ${f.filename === filename ? 'active' : ''}" style="text-decoration: none; color: inherit;">
+                        <div class="file-icon">
+                            <i data-lucide="file-video" size="16"></i>
+                        </div>
+                        <div class="file-info">
+                            <div class="file-name">${f.filename}</div>
+                            <div class="file-meta">${f.size_mb} MB</div>
+                        </div>
+                    </a>
+                `).join('');
+                lucide.createIcons();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function downloadVideo() {
+            const a = document.createElement('a');
+            a.href = '/replay/' + filename;
+            a.download = filename;
+            a.click();
+        }
+
+        loadFiles();
+    </script>
+</body>
+</html>

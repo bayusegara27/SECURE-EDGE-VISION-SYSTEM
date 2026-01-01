@@ -1,0 +1,648 @@
+/* ============================================================
+   SECURE EDGE VISION SYSTEM - Unified Styles
+   V380 Pro Inspired Dashboard Theme
+   ============================================================ */
+
+:root {
+    /* Colors */
+    --bg-dark: #0a0e14;
+    --bg-panel: #12171e;
+    --bg-card: #1a2028;
+    --bg-hover: #242c38;
+    --border: #2a3442;
+    --text: #e4e8ed;
+    --text-dim: #6b7a8f;
+    --accent: #3b82f6;
+    --accent-hover: #2563eb;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --rec: #ef4444;
+    
+    /* Layout */
+    --sidebar-width: 52px;
+    --header-height: 48px;
+    --toolbar-height: 42px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg-dark);
+    color: var(--text);
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+/* ============================================================
+   SIDEBAR - Consistent across all pages
+   ============================================================ */
+
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: var(--sidebar-width);
+    height: 100vh;
+    background: var(--bg-panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 0;
+    z-index: 100;
+}
+
+.sidebar-logo {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, var(--accent), #8b5cf6);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+}
+
+.nav-item {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+}
+
+.nav-item:hover {
+    background: var(--bg-hover);
+    color: var(--text);
+}
+
+.nav-item.active {
+    background: var(--accent);
+    color: white;
+}
+
+.sidebar-bottom {
+    margin-top: auto;
+}
+
+/* ============================================================
+   MAIN LAYOUT
+   ============================================================ */
+
+.main-content {
+    margin-left: var(--sidebar-width);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Header */
+.header {
+    height: var(--header-height);
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    flex-shrink: 0;
+}
+
+.header-title {
+    font-size: 15px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.header-status {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 13px;
+    color: var(--text-dim);
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--success);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Content Area */
+.content-area {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+}
+
+/* ============================================================
+   CAMERA GRID (Dashboard)
+   ============================================================ */
+
+.camera-grid {
+    display: grid;
+    gap: 1px;
+    background: #000;
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    padding: 1px;
+    overflow: hidden;
+    position: relative; /* Added for zoomed tile positioning */
+}
+
+/* 1x1 Grid should match Zoomed view (no borders/padding) */
+.camera-grid.grid-1 {
+    padding: 0;
+    gap: 0;
+}
+
+.camera-grid.grid-1 .camera-tile {
+    border: none;
+}
+
+/* Fixed Grid Multiples */
+.camera-grid.grid-1 { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+.camera-grid.grid-4 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); }
+.camera-grid.grid-9 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); }
+.camera-grid.grid-16 { grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); }
+.camera-grid.grid-64 { grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); }
+
+.camera-tile {
+    background: #05070a;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.camera-tile.empty {
+    background: #000;
+}
+
+.camera-tile.empty i {
+    opacity: 0.1;
+}
+
+.camera-tile:hover {
+    border-color: var(--accent);
+}
+
+.camera-tile.selected {
+    border-color: var(--accent);
+    box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.camera-tile:hover {
+    border-color: var(--accent);
+}
+
+.camera-tile.zoomed {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 50;
+    border: none;
+}
+
+.camera-tile img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.camera-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 8px 12px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.8));
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.camera-id {
+    font-size: 12px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.camera-time {
+    font-size: 11px;
+    color: var(--text-dim);
+}
+
+/* Offline Overlay Background */
+.camera-tile.offline .camera-offline {
+    background: transparent; /* Changed from rgba to eliminate box */
+    z-index: 40;
+}
+
+.rec-badge {
+    background: var(--rec);
+    color: white;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 3px;
+    animation: rec-blink 1s infinite;
+    display: none; /* Hidden by default */
+}
+
+/* Show REC only when camera is online */
+.camera-tile.online .rec-badge {
+    display: inline;
+}
+
+@keyframes rec-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+.camera-offline {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-dim);
+    gap: 12px;
+    background: transparent; /* Changed from #000 to blend with tile */
+}
+
+.offline-icon {
+    color: var(--warning);
+    filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.3));
+}
+
+.offline-text {
+    font-size: 13px;
+    color: var(--text-dim);
+    text-align: center;
+}
+
+.relink {
+    color: var(--accent);
+    cursor: pointer;
+    text-decoration: underline;
+    margin-left: 5px;
+}
+
+.relink:hover {
+    color: var(--accent-hover);
+}
+
+/* ============================================================
+   PANEL LAYOUTS (Gallery, Decrypt)
+   ============================================================ */
+
+.panel-left {
+    width: 280px;
+    background: var(--bg-panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.panel-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.panel-content {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.panel-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* File List */
+.file-list {
+    padding: 8px;
+}
+
+.file-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.file-item:hover {
+    background: var(--bg-hover);
+}
+
+.file-item.active {
+    background: var(--accent);
+}
+
+.file-icon {
+    width: 32px;
+    height: 32px;
+    background: var(--bg-card);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+}
+
+.file-item.active .file-icon {
+    background: rgba(255,255,255,0.2);
+    color: white;
+}
+
+.file-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.file-name {
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-meta {
+    font-size: 11px;
+    color: var(--text-dim);
+}
+
+.file-item.active .file-meta {
+    color: rgba(255,255,255,0.7);
+}
+
+.file-size {
+    font-size: 12px;
+    color: var(--text-dim);
+}
+
+/* ============================================================
+   VIDEO PLAYER
+   ============================================================ */
+
+.video-container {
+    flex: 1;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.video-container video {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.video-controls {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 12px 16px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.9));
+}
+
+/* ============================================================
+   BUTTONS & INPUTS
+   ============================================================ */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--accent-hover);
+}
+
+.btn-secondary {
+    background: var(--bg-card);
+    color: var(--text);
+    border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-hover);
+}
+
+.input {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 13px;
+}
+
+.input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+/* ============================================================
+   UTILITY CLASSES
+   ============================================================ */
+
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-2 { gap: 8px; }
+.gap-4 { gap: 16px; }
+.p-4 { padding: 16px; }
+.text-dim { color: var(--text-dim); }
+.text-sm { font-size: 13px; }
+.text-xs { font-size: 11px; }
+
+/* ============================================================
+   FOOTER TOOLBAR
+   ============================================================ */
+
+.footer-toolbar {
+    height: var(--toolbar-height);
+    background: var(--bg-panel);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 0 16px;
+    flex-shrink: 0;
+}
+
+.toolbar-btn {
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    background: none;
+    border: none;
+}
+
+.toolbar-btn:hover, .toolbar-btn.active {
+    color: var(--accent);
+}
+
+.toolbar-divider {
+    width: 1px;
+    height: 16px;
+    background: var(--border);
+}
+
+/* ============================================================
+   NAVIGATION CONTROLS (1x1 & Zoom Mode)
+   ============================================================ */
+
+.nav-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 40px; /* Increased padding to clear sidebar */
+    pointer-events: none;
+    z-index: 200; /* Extremely high z-index */
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.camera-tile.zoomed .nav-overlay,
+.camera-grid.grid-1 .camera-tile .nav-overlay,
+.camera-grid.grid-1 .nav-overlay {
+    opacity: 1;
+}
+
+.nav-btn {
+    width: 48px;
+    height: 48px;
+    background: rgba(30, 41, 59, 0.8); /* Dark slate background */
+    border: 2px solid var(--accent); /* Accent border for visibility */
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    pointer-events: auto;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+.nav-btn:hover {
+    background: var(--accent);
+    transform: scale(1.1);
+    box-shadow: 0 0 20px var(--accent);
+}
+
+.nav-btn.prev { order: 1; }
+.nav-btn.next { order: 2; }
+
+/* Offline styles refinement */
+.offline-icon {
+    color: var(--warning);
+    font-size: 64px; /* Even larger */
+    filter: drop-shadow(0 0 15px rgba(245, 158, 11, 0.6));
+}
+
+/* Ensure video controls use standard appearance regardless of generic scrollbar styles */
+video::-webkit-media-controls-enclosure {
+    overflow: hidden;
+}
+
+video::-webkit-media-controls-panel {
+    width: calc(100% + 14px); /* Fix clipping in some browsers */
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-dim);
+}
+

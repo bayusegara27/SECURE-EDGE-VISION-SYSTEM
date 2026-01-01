@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SECURE EDGE | Recordings</title>
+    <link rel="stylesheet" href="/static/css/shared.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .filter-tabs {
+            display: flex;
+            gap: 4px;
+            padding: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        .filter-tab {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            background: transparent;
+            color: var(--text-dim);
+            border: none;
+        }
+        .filter-tab.active {
+            background: var(--accent);
+            color: white;
+        }
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-dim);
+            gap: 12px;
+        }
+
+        /* V380 Timeline Styles */
+        .v380-controls {
+            position: absolute;
+            bottom: 20px; /* Lifted up from bottom */
+            left: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            border-radius: 8px; /* Added rounded corners for premium feel */
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            user-select: none; /* Prevent text selection during drag */
+            -webkit-user-select: none;
+        }
+        .v380-toolbar {
+            display: flex;
+            align-items: center;
+            padding: 8px 16px;
+            gap: 12px;
+        }
+        .v380-btn {
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.2s;
+        }
+        .v380-btn:hover { opacity: 0.7; }
+        .v380-time {
+            font-size: 13px;
+            color: var(--text-dim);
+            font-family: monospace;
+        }
+        .timeline-container {
+            height: 60px;
+            background: #f1f5f9; /* Slightly darker for contrast */
+            position: relative;
+            padding: 0 45px; /* Added significant padding for edge labels */
+            cursor: ew-resize;
+            border-top: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+        }
+        .timeline-ruler {
+            position: relative; /* Changed to relative to respect parent padding */
+            height: 100%;
+            flex: 1; /* Fills available space inside padding */
+            background-color: #fff;
+            /* Grid will be set dynamically in JS */
+            background-image: 
+                linear-gradient(90deg, #94a3b8 1.5px, transparent 1.5px),
+                linear-gradient(90deg, #cbd5e1 1px, transparent 1px);
+            background-position: 0 100%, 0 100%;
+            background-repeat: repeat-x;
+        }
+        .timeline-playhead {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #3b82f6;
+            z-index: 10;
+            left: 0; /* Starts at 0 */
+            transition: left 0.1s linear;
+        }
+        .detection-marker {
+            position: absolute;
+            height: 100%;
+            background: rgba(239, 68, 68, 0.4); /* Red detection segments */
+            top: 0;
+        }
+        .time-label {
+            position: absolute;
+            bottom: 35px;
+            font-size: 10px;
+            color: #666;
+            transform: translateX(-50%);
+        }
+
+        /* Video containment fix */
+        .panel-main {
+            background: #000;
+            display: flex;
+            flex-direction: column;
+        }
+        .video-container {
+            position: relative;
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            padding-bottom: 140px; /* Safe space for floating controls */
+            box-sizing: border-box;
+        }
+        #videoPlayer {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            box-shadow: 0 0 40px rgba(0,0,0,1);
+        }
+
+        /* Badge for active recording */
+        .badge-rec {
+            background: #ef4444;
+            color: white;
+            font-size: 9px;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin-left: 6px;
+            vertical-align: middle;
+            animation: pulse-red 2s infinite;
+        }
+        @keyframes pulse-red {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .file-item.recording .file-icon i {
+            color: #ef4444;
+        }
+        .file-item.recording .file-name {
+            color: #ef4444;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="sidebar-logo">
+            <i data-lucide="shield" size="20" color="white"></i>
+        </div>
+        <div class="sidebar-nav">
+            <a href="/" class="nav-item" title="Live View">
+                <i data-lucide="monitor" size="20"></i>
+            </a>
+            <a href="/gallery" class="nav-item active" title="Recordings">
+                <i data-lucide="folder" size="20"></i>
+            </a>
+            <a href="/analytics" class="nav-item" title="Analytics">
+                <i data-lucide="bar-chart-2" size="20"></i>
+            </a>
+            <a href="/decrypt" class="nav-item" title="Decrypt Evidence">
+                <i data-lucide="lock" size="20"></i>
+            </a>
+        </div>
+        <div class="sidebar-bottom">
+            <div class="nav-item" title="Settings">
+                <i data-lucide="settings" size="20"></i>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-title">
+                <i data-lucide="folder" size="18"></i>
+                Recordings
+            </div>
+            <div class="header-status">
+                <span id="fileCount">0 files</span>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <div class="content-area">
+            <!-- Left Panel - File List -->
+            <div class="panel-left">
+                <div class="filter-tabs">
+                    <button class="filter-tab active" data-filter="all">All</button>
+                    <button class="filter-tab" data-filter="cam0">CAM 0</button>
+                    <button class="filter-tab" data-filter="cam1">CAM 1</button>
+                    <button class="filter-tab" data-filter="rtsp">RTSP</button>
+                </div>
+                <div class="panel-content">
+                    <div class="file-list" id="fileList">
+                        <div class="empty-state">
+                            <i data-lucide="loader" size="24" class="spin"></i>
+                            <span>Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main - Video Player -->
+            <div class="panel-main">
+                <div class="video-container" id="videoContainer">
+                    <div class="empty-state" id="noVideoState">
+                        <i data-lucide="play-circle" size="48"></i>
+                        <span>Select a recording to play</span>
+                    </div>
+                    <video id="videoPlayer" style="display: none; width: 100%; height: 100%; pointer-events: none;"></video>
+                    
+                    <!-- V380 Style Custom Controls -->
+                    <div class="v380-controls" id="customControls" style="display: none;">
+                        <div class="v380-toolbar">
+                            <button class="v380-btn" id="playPauseBtn" onclick="togglePlay()">
+                                <i data-lucide="play" size="20"></i>
+                            </button>
+                            <div class="v380-time" id="currentTimeDisplay">00:00 / 00:00</div>
+                            <div style="flex: 1;"></div>
+                            <button class="v380-btn" onclick="toggleFullscreen()">
+                                <i data-lucide="maximize" size="18"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="timeline-container">
+                            <div class="timeline-ruler" id="timelineRuler">
+                                <!-- Ruler markings and events will be rendered here -->
+                                <div class="timeline-playhead" id="playhead"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+        
+        let recordings = [];
+        let currentFilter = 'all';
+
+        // Load recordings
+        async function loadRecordings() {
+            try {
+                const res = await fetch('/api/recordings');
+                const data = await res.json();
+                recordings = data.recordings || [];
+                renderList();
+            } catch (e) {
+                console.error('Failed to load:', e);
+            }
+        }
+
+        // Render file list
+        function renderList() {
+            const filtered = currentFilter === 'all' 
+                ? recordings 
+                : recordings.filter(r => r.filename.includes(currentFilter));
+            
+            document.getElementById('fileCount').textContent = filtered.length + ' files';
+            
+            if (filtered.length === 0) {
+                document.getElementById('fileList').innerHTML = `
+                    <div class="empty-state">
+                        <i data-lucide="inbox" size="32"></i>
+                        <span>No recordings found</span>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            document.getElementById('fileList').innerHTML = filtered.map(r => `
+                <div class="file-item ${r.is_active ? 'recording' : ''}" onclick="playVideo('${r.filename}', this)">
+                    <div class="file-icon">
+                        <i data-lucide="${r.is_active ? 'circle-dot' : 'file-video'}" size="16"></i>
+                    </div>
+                    <div class="file-info">
+                        <div class="file-name">
+                            ${r.filename}
+                            ${r.is_active ? '<span class="badge-rec">REC</span>' : ''}
+                        </div>
+                        <div class="file-meta">${r.created}</div>
+                    </div>
+                    <div class="file-size">${r.size_mb} MB</div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        let currentMetadata = null;
+        let isSeeking = false;
+
+        // Play video
+        async function playVideo(filename, element) {
+            document.querySelectorAll('.file-item').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+
+            document.getElementById('noVideoState').style.display = 'none';
+            document.getElementById('customControls').style.display = 'flex';
+            
+            const video = document.getElementById('videoPlayer');
+            video.style.display = 'block';
+            video.src = '/replay/' + filename;
+            
+            // Load metadata for timeline
+            await loadMetadata(filename);
+            
+            video.play();
+            updatePlayBtn(true);
+        }
+
+        async function loadMetadata(filename) {
+            try {
+                const res = await fetch(`/api/recording-metadata/${filename}`);
+                currentMetadata = await res.json();
+                renderTimeline();
+            } catch (e) {
+                console.error('Failed to load metadata:', e);
+                currentMetadata = { detections: [] };
+                renderTimeline();
+            }
+        }
+
+        function renderTimeline() {
+            const ruler = document.getElementById('timelineRuler');
+            const video = document.getElementById('videoPlayer');
+            
+            ruler.querySelectorAll('.detection-marker, .time-label').forEach(el => el.remove());
+            
+            if (!video.duration || isNaN(video.duration) || !currentMetadata) {
+                video.onloadedmetadata = renderTimeline;
+                return;
+            }
+
+            const duration = video.duration;
+            const totalFrames = currentMetadata.total_frames || (duration * (currentMetadata.fps || 30));
+            ruler.style.width = '100%';
+            const pixelsPerSecond = ruler.offsetWidth / duration;
+
+            // Accurate Grid: Major ticks every 10s, minor ticks every 2s
+            ruler.style.backgroundSize = `${10 * pixelsPerSecond}px 60%, ${2 * pixelsPerSecond}px 40%`;
+
+            // Add detection markers using frame percentage for perfect sync
+            if (currentMetadata.detections && currentMetadata.detections.length > 0) {
+                let currentSegment = null;
+                
+                currentMetadata.detections.forEach(det => {
+                    // Handle both old format [frameIdx, ...] and new format [{"f": frameIdx, ...}]
+                    const frameIdx = (typeof det === 'object') ? det.f : det;
+                    const progress = frameIdx / totalFrames;
+                    const time = progress * duration;
+                    
+                    if (!currentSegment || time > currentSegment.end + 0.5) { // 0.5s gap
+                        currentSegment = { start: time, end: time };
+                        const marker = document.createElement('div');
+                        marker.className = 'detection-marker';
+                        marker.style.left = (progress * 100) + '%';
+                        ruler.appendChild(marker);
+                        currentSegment.marker = marker;
+                    } else {
+                        currentSegment.end = time;
+                        const widthPercent = ((currentSegment.end - currentSegment.start) / duration) * 100;
+                        currentSegment.marker.style.width = `calc(${widthPercent}% + 2px)`;
+                    }
+                });
+            }
+
+            // Add time labels every 10-30s depending on duration
+            const minPxBetweenLabels = 80;
+            let labelInterval = 10;
+            while (labelInterval * pixelsPerSecond < minPxBetweenLabels) {
+                labelInterval += 10;
+            }
+
+            for (let t = 0; t <= duration; t += labelInterval) {
+                const label = document.createElement('div');
+                label.className = 'time-label';
+                label.style.left = ((t / duration) * 100) + '%';
+                label.textContent = formatTime(t);
+                ruler.appendChild(label);
+            }
+        }
+
+        // Re-render on resize
+        window.addEventListener('resize', () => {
+            if (document.getElementById('customControls').style.display !== 'none') {
+                renderTimeline();
+            }
+        });
+
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return "00:00";
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        // Timeline interactions
+        const container = document.querySelector('.timeline-container');
+        const ruler = document.getElementById('timelineRuler');
+        const video = document.getElementById('videoPlayer');
+        const playhead = document.getElementById('playhead');
+
+        video.ontimeupdate = () => {
+            if (isSeeking) return;
+            const progress = video.currentTime / (video.duration || 1);
+            playhead.style.left = (progress * 100) + '%';
+            
+            document.getElementById('currentTimeDisplay').textContent = 
+                `${formatTime(video.currentTime)} / ${formatTime(video.duration || 0)}`;
+        };
+
+        function handleSeek(e) {
+            const rect = ruler.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const percentage = Math.max(0, Math.min(1, x / rect.width));
+            const time = percentage * video.duration;
+            
+            video.currentTime = time;
+            playhead.style.left = (percentage * 100) + '%';
+        }
+
+        container.addEventListener('mousedown', (e) => {
+            isSeeking = true;
+            handleSeek(e);
+            
+            const onMouseMove = (e) => {
+                handleSeek(e);
+            };
+            
+            const onMouseUp = () => {
+                isSeeking = false;
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+            };
+            
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        });
+
+        function togglePlay() {
+            const video = document.getElementById('videoPlayer');
+            if (video.paused) {
+                video.play();
+                updatePlayBtn(true);
+            } else {
+                video.pause();
+                updatePlayBtn(false);
+            }
+        }
+
+        function updatePlayBtn(playing) {
+            const btn = document.getElementById('playPauseBtn');
+            btn.innerHTML = playing ? 
+                '<i data-lucide="pause" size="20"></i>' : 
+                '<i data-lucide="play" size="20"></i>';
+            lucide.createIcons();
+        }
+
+        function toggleFullscreen() {
+            const container = document.getElementById('videoContainer');
+            if (!document.fullscreenElement) {
+                container.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Filter tabs
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.onclick = () => {
+                document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentFilter = tab.dataset.filter;
+                renderList();
+            };
+        });
+
+        loadRecordings();
+    </script>
+
+    <style>
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .spin { animation: spin 1s linear infinite; }
+    </style>
+</body>
+</html>

@@ -1,0 +1,7 @@
+Metric,Min,Max,Average,Std Dev
+latency_ms,21.37,63.91,33.23,6.27
+fps,30.40,32.24,31.38,0.47
+gpu_utilization,28.00,41.00,35.71,2.68
+detection_time_ms,9.27,20.11,11.74,2.42
+blur_time_ms,1.04,7.20,3.85,0.77
+detections_per_frame,0.00,1.00,0.98,0.13

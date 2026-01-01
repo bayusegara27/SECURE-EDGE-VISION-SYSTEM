@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SECURE EDGE | Decrypt Evidence</title>
+    <link rel="stylesheet" href="/static/css/shared.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Badge for active recording */
+        .badge-rec {
+            background: #ef4444;
+            color: white;
+            font-size: 9px;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin-left: 6px;
+            vertical-align: middle;
+            animation: pulse-red 2s infinite;
+        }
+        @keyframes pulse-red {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        tr.recording td:first-child {
+            color: #ef4444 !important;
+        }
+        tr.recording {
+            background: rgba(239, 68, 68, 0.05);
+        }
+        .decrypt-layout {
+            display: flex;
+            height: 100%;
+            width: 100%;
+            flex: 1;
+        }
+        .file-table {
+            width: 100%;
+        }
+        .file-table th, .file-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        .file-table th {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            font-weight: 600;
+        }
+        .file-table tr {
+            cursor: pointer;
+        }
+        .file-table tr:hover td {
+            background: var(--bg-hover);
+        }
+        .file-table tr.selected td {
+            background: var(--accent);
+        }
+        .format-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+        .format-aes {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--accent);
+        }
+        .format-hybrid {
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--success);
+        }
+        .decrypt-sidebar {
+            width: 360px;
+            background: var(--bg-panel);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+        .decrypt-form {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-label {
+            display: block;
+            font-size: 12px;
+            margin-bottom: 6px;
+            color: var(--text-dim);
+        }
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            margin-bottom: 16px;
+        }
+        .checkbox-row input {
+            width: 16px;
+            height: 16px;
+        }
+        .progress-section {
+            padding: 20px;
+            display: none;
+        }
+        .progress-section.active {
+            display: block;
+        }
+        .progress-bar {
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 12px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .progress-text {
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+        .result-section {
+            flex: 1;
+            display: none;
+            flex-direction: column;
+        }
+        .result-section.active {
+            display: flex;
+        }
+        .result-header {
+            padding: 16px 20px;
+            background: rgba(34, 197, 94, 0.1);
+            border-bottom: 1px solid rgba(34, 197, 94, 0.2);
+        }
+        .result-header h3 {
+            color: var(--success);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .result-meta {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            padding: 16px 20px;
+            gap: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .meta-item {
+            text-align: center;
+        }
+        .meta-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--accent);
+        }
+        .meta-label {
+            font-size: 10px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+        }
+        .result-video {
+            flex: 1;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .result-video video {
+            max-width: 100%;
+            max-height: 100%;
+        }
+        .result-actions {
+            padding: 16px 20px;
+            display: flex;
+            gap: 12px;
+        }
+        .result-actions .btn {
+            flex: 1;
+        }
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            color: var(--text-dim);
+            gap: 12px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="sidebar-logo">
+            <i data-lucide="shield" size="20" color="white"></i>
+        </div>
+        <div class="sidebar-nav">
+            <a href="/" class="nav-item" title="Live View">
+                <i data-lucide="monitor" size="20"></i>
+            </a>
+            <a href="/gallery" class="nav-item" title="Recordings">
+                <i data-lucide="folder" size="20"></i>
+            </a>
+            <a href="/analytics" class="nav-item" title="Analytics">
+                <i data-lucide="bar-chart-2" size="20"></i>
+            </a>
+            <a href="/decrypt" class="nav-item active" title="Decrypt Evidence">
+                <i data-lucide="lock" size="20"></i>
+            </a>
+        </div>
+        <div class="sidebar-bottom">
+            <div class="nav-item" title="Settings">
+                <i data-lucide="settings" size="20"></i>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-title">
+                <i data-lucide="lock" size="18"></i>
+                Evidence Decryptor
+            </div>
+            <div class="header-status">
+                <span id="fileCount">0 encrypted files</span>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <div class="content-area" style="display: flex; flex-direction: column;">
+            <div class="decrypt-layout">
+                <!-- Main Panel: File Table or Video Preview -->
+                <div class="panel-main" id="panelMain" style="overflow-y: auto;">
+                    <table class="file-table" id="fileTable">
+                        <thead>
+                            <tr>
+                                <th>Filename</th>
+                                <th>Date</th>
+                                <th>Size</th>
+                                <th>Format</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fileBody">
+                            <tr>
+                                <td colspan="4">
+                                    <div class="empty-state">
+                                        <i data-lucide="loader" size="24" class="spin"></i>
+                                        <span>Loading evidence files...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <!-- Video Preview Area (hidden by default) -->
+                    <div id="videoPreviewArea" class="video-container" style="display: none; height: 100%; width: 100%; background: #000;">
+                        <video id="resultVideo" controls style="width: 100%; height: 100%; object-fit: contain;"></video>
+                    </div>
+                </div>
+
+                <!-- Decrypt Sidebar -->
+                <div class="decrypt-sidebar">
+                    <div class="decrypt-form" id="formSection">
+                        <div class="form-group">
+                            <label class="form-label">Selected File</label>
+                            <input type="text" class="input" id="selectedFile" readonly placeholder="Select a file from the list">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">PIN (optional)</label>
+                            <input type="password" class="input" id="pinInput" placeholder="Enter if key is protected">
+                        </div>
+                        <div class="checkbox-row">
+                            <input type="checkbox" id="showBoxes" checked>
+                            <label for="showBoxes">Show detection boxes</label>
+                        </div>
+                        <button class="btn btn-primary" style="width: 100%;" id="decryptBtn" disabled onclick="startDecrypt()">
+                            <i data-lucide="key" size="16"></i>
+                            Decrypt
+                        </button>
+                    </div>
+
+                    <div class="progress-section" id="progressSection">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <i data-lucide="loader" size="18" class="spin" style="color: var(--accent);"></i>
+                            <span style="font-weight: 500;">Decrypting...</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <div class="progress-text" id="progressText">Starting...</div>
+                    </div>
+
+                    <div class="result-section" id="resultSection">
+                        <div class="result-header">
+                            <h3>
+                                <i data-lucide="check-circle" size="18"></i>
+                                Decryption Complete
+                            </h3>
+                        </div>
+                        <div class="result-meta">
+                            <div class="meta-item">
+                                <div class="meta-value" id="metaFrames">0</div>
+                                <div class="meta-label">Frames</div>
+                            </div>
+                            <div class="meta-item">
+                                <div class="meta-value" id="metaDuration">0s</div>
+                                <div class="meta-label">Duration</div>
+                            </div>
+                            <div class="meta-item">
+                                <div class="meta-value" id="metaHash">-</div>
+                                <div class="meta-label">Hash</div>
+                            </div>
+                        </div>
+                        <div style="flex: 1;"></div> <!-- Spacer -->
+                        <div class="result-actions">
+                            <button class="btn btn-primary" onclick="downloadVideo()">
+                                <i data-lucide="download" size="16"></i>
+                                Download
+                            </button>
+                            <button class="btn btn-secondary" onclick="closeResult()">
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        let selectedFilename = null;
+        let decryptedVideoUrl = null;
+
+        // Load files
+        async function loadFiles() {
+            try {
+                const res = await fetch('/api/evidence-decrypt');
+                const data = await res.json();
+                const files = data.evidence || [];
+                
+                document.getElementById('fileCount').textContent = files.length + ' encrypted files';
+
+                if (files.length === 0) {
+                    document.getElementById('fileBody').innerHTML = `
+                        <tr><td colspan="4">
+                            <div class="empty-state">
+                                <i data-lucide="inbox" size="32"></i>
+                                <span>No encrypted evidence files</span>
+                            </div>
+                        </td></tr>
+                    `;
+                    lucide.createIcons();
+                    return;
+                }
+
+                document.getElementById('fileBody').innerHTML = files.map(f => `
+                    <tr class="${f.is_active ? 'recording' : ''}" onclick="selectFile('${f.filename}', this)">
+                        <td style="font-weight: 500;">
+                            ${f.filename}
+                            ${f.is_active ? '<span class="badge-rec">REC</span>' : ''}
+                        </td>
+                        <td style="color: var(--text-dim);">${f.created}</td>
+                        <td>${f.size_mb} MB</td>
+                        <td>
+                            <span class="format-badge ${f.format === 'hybrid' ? 'format-hybrid' : 'format-aes'}">
+                                ${f.format === 'hybrid' ? 'RSA+AES' : 'AES'}
+                            </span>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                console.error('Failed to load:', e);
+            }
+        }
+
+        // Select file
+        function selectFile(filename, row) {
+            selectedFilename = filename;
+            document.querySelectorAll('.file-table tr').forEach(r => r.classList.remove('selected'));
+            row.classList.add('selected');
+            document.getElementById('selectedFile').value = filename;
+            document.getElementById('decryptBtn').disabled = false;
+        }
+
+        // Start decrypt
+        async function startDecrypt() {
+            if (!selectedFilename) return;
+
+            const pin = document.getElementById('pinInput').value;
+            const showBoxes = document.getElementById('showBoxes').checked;
+
+            // Show progress
+            document.getElementById('formSection').style.display = 'none';
+            document.getElementById('progressSection').classList.add('active');
+            document.getElementById('resultSection').classList.remove('active');
+
+            // Update progress text
+            const progressText = document.getElementById('progressText');
+            const progressFill = document.getElementById('progressFill');
+            
+            progressText.textContent = 'Loading encrypted file...';
+            progressFill.style.width = '10%';
+
+            try {
+                // Simulate progress stages
+                setTimeout(() => {
+                    progressText.textContent = 'Decrypting data...';
+                    progressFill.style.width = '30%';
+                }, 500);
+
+                setTimeout(() => {
+                    progressText.textContent = 'Processing frames...';
+                    progressFill.style.width = '60%';
+                }, 1500);
+
+                const res = await fetch('/api/decrypt', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        filename: selectedFilename,
+                        pin: pin || null,
+                        show_boxes: showBoxes
+                    })
+                });
+
+                progressFill.style.width = '100%';
+                progressText.textContent = 'Complete!';
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data.detail || 'Decryption failed');
+                }
+
+                // Show result
+                setTimeout(() => {
+                    document.getElementById('progressSection').classList.remove('active');
+                    document.getElementById('resultSection').classList.add('active');
+
+                    // Switch main panel to video preview
+                    document.getElementById('fileTable').style.display = 'none';
+                    document.getElementById('videoPreviewArea').style.display = 'block';
+
+                    document.getElementById('metaFrames').textContent = data.frame_count || 0;
+                    document.getElementById('metaDuration').textContent = (data.duration || 0).toFixed(1) + 's';
+                    document.getElementById('metaHash').textContent = (data.hash || '').substring(0, 8);
+
+                    if (data.video_url) {
+                        decryptedVideoUrl = data.video_url;
+                        document.getElementById('resultVideo').src = data.video_url;
+                        document.getElementById('resultVideo').play();
+                    }
+
+                    lucide.createIcons();
+                }, 500);
+
+            } catch (e) {
+                alert('Error: ' + e.message);
+                closeResult();
+            }
+        }
+
+        // Download video
+        function downloadVideo() {
+            if (decryptedVideoUrl) {
+                const a = document.createElement('a');
+                a.href = decryptedVideoUrl + '?download=1';
+                a.download = selectedFilename.replace('.enc', '.mp4');
+                a.click();
+            }
+        }
+
+        // Close result
+        function closeResult() {
+            document.getElementById('formSection').style.display = 'block';
+            document.getElementById('progressSection').classList.remove('active');
+            document.getElementById('resultSection').classList.remove('active');
+            document.getElementById('progressFill').style.width = '0%';
+            
+            // Revert main panel
+            document.getElementById('fileTable').style.display = 'table';
+            document.getElementById('videoPreviewArea').style.display = 'none';
+
+            document.getElementById('resultVideo').src = '';
+            decryptedVideoUrl = null;
+        }
+
+        loadFiles();
+    </script>
+
+    <style>
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .spin { animation: spin 1s linear infinite; }
+    </style>
+</body>
+</html>
