@@ -1,6 +1,6 @@
 # Application Version
 VERSION = "1.3.0"
-VERSION_NAME = "Analytics & System Enhancement"
+VERSION_NAME = "Analytics & Documentation Update"
 RELEASE_DATE = "2026-01-01"
 
 # Version History
@@ -11,9 +11,10 @@ CHANGELOG = {
         "features": [
             "Comprehensive analytics dashboard overhaul",
             "Multi-drive support with automatic detection",
+            "Professional Forgejo Wiki with Mermaid diagrams",
+            "Synchronized local documentation (README, Flow, etc.)",
             "Search functionality in decrypt page",
-            "Storage efficiency and peak activity analysis",
-            "Enhanced chart tooltips and smooth refresh"
+            "Project cleanup: Removed 5GB duplicate venv"
         ]
     },
     "1.2.0": {

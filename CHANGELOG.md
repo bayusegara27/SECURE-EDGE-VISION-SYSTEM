@@ -2,18 +2,22 @@
 
 ## Version History
 
-### v1.0.0-stable (2026-01-01)
-**Production Ready Release**
+### v1.3.0-stable (2026-01-01) - CURRENT
+**The Documentation & Analytics Update**
 
 #### Features:
-- ✅ Multi-camera support (3 streams)
-- ✅ Real-time face detection (YOLOv8-Face)
-- ✅ Dual-path recording (Public MP4 + Encrypted Evidence)
-- ✅ AES-256-GCM encryption with SHA-256 integrity
-- ✅ Web dashboard (Live, Gallery, Analytics, Decrypt)
-- ✅ Storage optimization (selective recording, JPEG quality)
-- ✅ FIFO retention policy (auto-cleanup)
-- ✅ Analytics dashboard with charts
+- ✅ **New Documentation Center**: Comprehensive Wiki Forgejo dengan Mermaid diagrams.
+- ✅ **Advanced Analytics**: Real-time storage metrics, usage velocity forecast, dan interactive charts.
+- ✅ **Multi-Drive Dashboard**: Monitor semua disk drive yang digunakan untuk recording.
+- ✅ **Evidence Search**: Filter evidence berdasarkan nama file, tanggal, atau ukuran.
+- ✅ **Selective Recording**: Efisiensi storage hingga 80% (record hanya saat ada wajah).
+- ✅ **AES-256-GCM Encryption**: Keamanan tingkat militer untuk bukti forensik.
+- ✅ **In-Browser Decryption**: Buka evidence langsung dari dashboard via PIN aman.
+
+#### Technical Improvements:
+- Removed 5GB duplicate venv for optimized development.
+- Updated .gitignore for Frontmatter CMS and other cache files.
+- Synchronized all documentation (README, Masterplan, Encryption Flow) with Mermaid.
 
 #### Bug Fixes:
 - Fixed evidence filename None timestamp

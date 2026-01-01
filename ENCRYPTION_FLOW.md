@@ -9,44 +9,32 @@ Sistem menggunakan **AES-256-GCM** (Authenticated Encryption) dengan **SHA-256**
 ## 📊 Flow Diagram Lengkap
 
 ```mermaid
-flowchart TD
-    Start([🎥 Camera Capture Frame]) --> Detect[🤖 YOLOv8 Face Detection]
-    Detect --> Split{Dual Path Split}
+sequenceDiagram
+    participant Cam as Camera / YOLO
+    participant Buf as Frame Buffer
+    participant Sec as SecureVault
+    participant Disk as Storage (.enc)
+
+    Cam->>Buf: Capture & Detect Face
+    Note over Buf: Buffer 6000 frames<br/>(or 5 minutes)
     
-    Split -->|Path 1: Public| Blur[🌫️ Gaussian Blur]
-    Split -->|Path 2: Evidence| Buffer[📦 Evidence Buffer]
+    Buf->>Sec: Serialize (Pickle)
     
-    Blur --> MP4[💾 Save to MP4<br/>H.264 Codec]
-    
-    Buffer --> Check{Buffer Full?<br/>6000 frames or<br/>5 minutes}
-    Check -->|No| Wait[⏳ Keep Buffering]
-    Wait --> Detect
-    Check -->|Yes| Flush[🚀 Trigger Flush]
-    
-    Flush --> Serialize[📝 Step 1: Serialize<br/>pickle.dumps]
-    
-    Serialize --> Hash[🔐 Step 2: Compute Hash<br/>SHA-256]
-    
-    Hash --> Payload[📦 Step 3: Create Payload<br/>hash + '::' + data]
-    
-    Payload --> Nonce[🎲 Step 4: Generate Nonce<br/>12 random bytes]
-    
-    Nonce --> Encrypt[🔒 Step 5: AES-256-GCM Encrypt<br/>with nonce + key]
-    
-    Encrypt --> Package[📦 Step 6: Create Package<br/>nonce + ciphertext + metadata]
-    
-    Package --> Save[💾 Step 7: Save to .enc file]
-    
-    Save --> Done([✅ Evidence Saved])
-    
-    MP4 --> End1([✅ Public Recording])
-    
-    style Start fill:#4CAF50
-    style Done fill:#2196F3
-    style End1 fill:#FF9800
-    style Encrypt fill:#F44336,color:#fff
-    style Hash fill:#9C27B0,color:#fff
+    rect rgb(240, 240, 240)
+        Note over Sec: Integrity Layer
+        Sec->>Sec: Compute SHA-256 Hash
+    end
+
+    rect rgb(230, 240, 255)
+        Note over Sec: Encryption Layer
+        Sec->>Sec: Generate 12-byte Nonce
+        Sec->>Sec: AES-256-GCM Encrypt<br/>(Hash + Data)
+    end
+
+    Sec->>Disk: Save Nonce + Ciphertext + Metadata
+    Note right of Disk: Evidence Ready 🔒
 ```
+
 
 ---
 

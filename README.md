@@ -12,6 +12,7 @@
 
 - [Overview](#overview)
 - [Features](#features)
+- [Wiki Documentation](#📖-wiki-documentation)
 - [System Requirements](#system-requirements)
 - [Installation](#installation)
 - [Configuration](#configuration)
@@ -65,6 +66,20 @@ SECURE EDGE is an intelligent surveillance system designed for undergraduate the
 - **Analytics**: Comprehensive system insights
 - **Decrypt**: Secure evidence decryption interface
 - **Search**: Quick filtering in evidence list
+
+---
+
+## 📖 Wiki Documentation
+
+Dokumentasi lengkap, panduan teknis, dan FAQ tersedia di Wiki Forgejo:
+👉 **[SECURE EDGE VISION SYSTEM WIKI](http://192.168.0.135:3000/nakumi/SECURE-EDGE-VISION-SYSTEM/wiki)**
+
+Wiki mencakup:
+- **Architecture Detail**: Penjelasan mendalam komponen sistem.
+- **Dual-Path Processing**: Cara kerja privasi vs forensik.
+- **Security Guide**: Detail teknis enkripsi AES-256-GCM.
+- **Quick-Start Guide**: Panduan instalasi 5 menit.
+- **FAQ**: Pertanyaan dan jawaban untuk sidang skripsi.
 
 ---
 

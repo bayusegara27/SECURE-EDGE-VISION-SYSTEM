@@ -6,16 +6,16 @@ Release Date: January 1, 2026
 CHANGELOG
 ==============================================
 
-v1.3.0 (2026-01-01) - Analytics & System Enhancement
+v1.3.0 (2026-01-01) - Analytics & Documentation Update
 -----------------------------------------------------
 [NEW] Comprehensive analytics dashboard with real-time metrics
 [NEW] Multi-drive support with automatic detection
+[NEW] Professional Forgejo Wiki with Mermaid diagrams
+[NEW] Synchronized local documentation (README, Masterplan, Flow)
 [NEW] Search functionality in decrypt page
-[NEW] Storage efficiency and peak activity analysis
-[IMPROVED] Chart tooltips and refresh behavior
 [IMPROVED] Disk space detection from actual recordings path
-[FIXED] Chart flicker during auto-refresh
-[FIXED] Emoji icons replaced with Lucide icons
+[CLEANUP] Removed duplicate 5GB venv and redundant project files
+[CLEANUP] Updated .gitignore for Frontmatter CMS and IDE cache
 
 v1.2.0 (2025-12-31) - Encryption & Security
 -----------------------------------------------------

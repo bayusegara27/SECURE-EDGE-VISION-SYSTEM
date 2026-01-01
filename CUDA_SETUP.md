@@ -9,7 +9,7 @@
 
 - **GPU NVIDIA** (RTX 3050, 3060, 3070, dll)
 - **NVIDIA Driver** terinstall
-- **Python 3.9+** dengan virtual environment
+- **Python 3.9+** dengan virtual environment (.venv)
 
 ---
 
@@ -48,8 +48,8 @@ cd E:\Kuliah\ProjectSkripsi
 ### Metode 2: Manual
 
 ```bash
-# 1. Aktifkan venv terlebih dahulu!
-.\venv\Scripts\activate
+# 1. Aktifkan .venv terlebih dahulu!
+.\.venv\Scripts\activate
 
 # 2. Uninstall PyTorch lama (jika ada)
 pip uninstall torch torchvision -y
@@ -108,7 +108,7 @@ Lihat output:
 # Cek path Python
 where python
 
-# Harus menunjuk ke: E:\...\venv\Scripts\python.exe
+# Harus menunjuk ke: E:\...\.venv\Scripts\python.exe
 # BUKAN ke: C:\Users\...\Python\python.exe
 ```
 
@@ -120,8 +120,8 @@ where python
 
 **3. Reinstall di venv:**
 ```bash
-.\venv\Scripts\pip.exe uninstall torch torchvision -y
-.\venv\Scripts\pip.exe install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+.\.venv\Scripts\pip.exe uninstall torch torchvision -y
+.\.venv\Scripts\pip.exe install torch torchvision --index-url https://download.pytorch.org/whl/cu121
 ```
 
 ### Problem: DLL Load Failed

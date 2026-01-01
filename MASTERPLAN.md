@@ -34,26 +34,32 @@ Sistem membagi aliran data menjadi dua jalur independen:
 
 ```mermaid
 graph TB
+    classDef layer stroke:#333,stroke-width:2px,fill:#f9f9f9;
+    classDef input fill:#e1f5fe,stroke:#01579b;
+    classDef edge fill:#fff3e0,stroke:#e65100;
+    classDef process fill:#f3e5f5,stroke:#4a148c;
+    classDef output fill:#e8f5e9,stroke:#1b5e20;
+
     subgraph Input["Input Layer"]
-        CAM0[Webcam 0]
-        CAM1[Webcam 1]
-        RTSP[RTSP Camera]
+        CAM0[Webcam 0]:::input
+        CAM1[Webcam 1]:::input
+        RTSP[RTSP Camera]:::input
     end
     
     subgraph EdgeServer["Edge Server (Laptop RTX 3050)"]
         subgraph CameraThreads["Camera Threads (Parallel)"]
-            T0[Thread 0]
-            T1[Thread 1]
-            T2[Thread 2]
+            T0[Thread 0]:::edge
+            T1[Thread 1]:::edge
+            T2[Thread 2]:::edge
         end
         
         subgraph AIEngine["AI Engine (CUDA)"]
-            YOLO[YOLOv8-Face<br/>GPU Accelerated]
+            YOLO[YOLOv8-Face<br/>GPU Accelerated]:::process
         end
         
         subgraph DualPath["Dual-Path Processing"]
-            BLUR[Gaussian Blur<br/>Kernel 51x51]
-            ENC[AES-256-GCM<br/>Encryption]
+            BLUR[Gaussian Blur<br/>Kernel 51x51]:::process
+            ENC[AES-256-GCM<br/>Encryption]:::process
         end
         
         subgraph Storage["Storage Layer"]
@@ -68,9 +74,9 @@ graph TB
     end
     
     subgraph Output["Output Layer"]
-        WEB[Web Dashboard<br/>FastAPI + MJPEG]
-        ANALYTICS[Analytics<br/>Chart.js]
-        DECRYPT[Decryption Tool<br/>Admin Only]
+        WEB[Web Dashboard<br/>FastAPI + MJPEG]:::output
+        ANALYTICS[Analytics<br/>Chart.js]:::output
+        DECRYPT[Decryption Tool<br/>Admin Only]:::output
     end
     
     CAM0 --> T0
@@ -91,6 +97,7 @@ graph TB
     PUBLIC --> ANALYTICS
     EVIDENCE --> DECRYPT
 ```
+
 
 ### 1.3 Inovasi Teknis
 
