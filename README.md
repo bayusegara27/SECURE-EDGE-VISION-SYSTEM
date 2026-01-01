@@ -1,269 +1,298 @@
-# 🔒 Secure Edge Vision System
+# SECURE EDGE - Intelligent Surveillance System
 
-> **Sistem Anonimisasi Video Real-Time dengan Arsitektur Dual-Path**  
-> Menggunakan YOLO + GPU Acceleration untuk deteksi wajah dan Gaussian Blur
+![Version](https://img.shields.io/badge/version-1.3.0-blue)
+![Python](https://img.shields.io/badge/python-3.11+-green)
+![License](https://img.shields.io/badge/license-MIT-yellow)
 
----
-
-## 📋 Tentang Project
-
-Sistem CCTV pintar yang melindungi privasi dengan:
-- **Path Publik**: Wajah otomatis di-blur → Aman untuk monitoring harian
-- **Path Forensik**: Video asli dienkripsi AES-256 → Hanya untuk investigasi
-
-```
-Camera → YOLO Detection → [Blur] → Web Dashboard + MP4
-                       ↓
-                    [Raw] → Encrypt AES-256 → .enc File
-```
+**Advanced AI-powered surveillance system with end-to-end encryption for evidence protection.**
 
 ---
 
-## 🚀 Quick Start (5 Menit)
+## 📋 Table of Contents
 
-### 1️⃣ Clone & Setup Virtual Environment
+- [Overview](#overview)
+- [Features](#features)
+- [System Requirements](#system-requirements)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Usage](#usage)
+- [Architecture](#architecture)
+- [Security](#security)
+- [Version History](#version-history)
+- [License](#license)
 
+---
+
+## 🎯 Overview
+
+SECURE EDGE is an intelligent surveillance system designed for undergraduate thesis research. It combines real-time AI object detection with military-grade encryption to provide secure evidence management for surveillance applications.
+
+**Key Highlights:**
+- 🤖 **AI Detection**: YOLOv8-powered real-time object detection
+- 🔒 **End-to-End Encryption**: AES-256-GCM for evidence protection
+- 📊 **Advanced Analytics**: Comprehensive storage and activity insights
+- 🎥 **Multi-Camera Support**: Handle multiple RTSP streams simultaneously
+- 💾 **Smart Storage**: Automatic cleanup with configurable retention policies
+
+---
+
+## ✨ Features
+
+### Core Surveillance
+- **Multi-Camera RTSP Support**: Connect multiple IP cameras simultaneously
+- **Real-Time AI Detection**: YOLOv8 object detection with configurable confidence threshold
+- **Dual Recording System**:
+  - Public recordings (MP4/AVI) for general viewing
+  - Encrypted evidence (`.enc`) for forensic integrity
+- **Automatic Segmentation**: 5-minute video segments for easy management
+
+### Security & Encryption
+- **AES-256-GCM Encryption**: Military-grade authenticated encryption
+- **SHA-256 Hashing**: Integrity verification for all evidence
+- **PIN-Protected Decryption**: Secure access to encrypted evidence
+- **In-Browser Playback**: Decrypt and view evidence without saving to disk
+
+### Analytics Dashboard
+- **Real-Time Metrics**: Events today, peak hour, average per hour
+- **Storage Health**: Multi-drive analysis with usage forecasting
+- **Storage Efficiency**: File counts, average sizes, compression ratios
+- **Peak Activity Analysis**: Busiest hours and cameras
+- **Interactive Charts**: Chart.js visualizations with enhanced tooltips
+
+### Web Interface
+- **Live View**: Real-time camera feeds with detection boxes
+- **Gallery**: Browse and playback recorded videos
+- **Analytics**: Comprehensive system insights
+- **Decrypt**: Secure evidence decryption interface
+- **Search**: Quick filtering in evidence list
+
+---
+
+## 💻 System Requirements
+
+### Minimum Requirements
+- **OS**: Windows 10/11 (tested), Linux (compatible)
+- **Python**: 3.11 or higher
+- **RAM**: 8GB minimum (16GB recommended)
+- **Storage**: 50GB+ for recordings
+- **Network**: Gigabit Ethernet for multiple cameras
+
+### Recommended for AI Detection
+- **GPU**: NVIDIA GPU with CUDA support
+- **VRAM**: 4GB+ for optimal performance
+- **CPU**: Intel i5/AMD Ryzen 5 or better
+
+---
+
+## 🚀 Installation
+
+### 1. Clone Repository
 ```bash
-cd E:\Kuliah\ProjectSkripsi
-
-# Buat virtual environment
-python -m venv venv
-
-# Aktifkan venv (WAJIB setiap buka terminal baru!)
-# Windows:
-.\venv\Scripts\activate
-
-# Linux/Mac:
-source venv/bin/activate
+git clone https://github.com/yourusername/secure-edge.git
+cd secure-edge
 ```
 
-### 2️⃣ Install Dependencies
-
+### 2. Create Virtual Environment
 ```bash
-# Install semua package
+python -m venv .venv
+.venv\Scripts\activate  # Windows
+# source .venv/bin/activate  # Linux/Mac
+```
+
+### 3. Install Dependencies
+```bash
 pip install -r requirements.txt
 ```
 
-### 3️⃣ Setup CUDA (Untuk GPU - SANGAT DISARANKAN)
-
-> ⚠️ **PENTING**: Tanpa CUDA, sistem akan lambat (5-10 FPS). Dengan CUDA bisa 25-30 FPS!
-
-Lihat panduan lengkap di **[CUDA_SETUP.md](CUDA_SETUP.md)** atau jalankan:
-
+### 4. Download YOLOv8 Model
 ```bash
-# Windows - jalankan script otomatis
-.\fix_cuda.bat
-
-# Atau manual:
-pip uninstall torch torchvision -y
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+# Model will be auto-downloaded on first run
+# Or manually download to models/ directory
 ```
 
-### 4️⃣ Test Sistem
-
+### 5. Setup Environment
 ```bash
-# Test semua komponen
-python demo.py --quick
+# Copy example environment file
+copy .env.example .env  # Windows
+# cp .env.example .env  # Linux/Mac
 
-# Test dengan video live (tekan Q untuk stop)
-python demo.py
+# Edit .env with your configuration
+notepad .env
 ```
 
-### 5️⃣ Jalankan Sistem
+---
+
+## ⚙️ Configuration
+
+### Environment Variables (`.env`)
+
+```env
+# Camera Configuration
+CAMERA_SOURCES=rtsp://192.168.1.100:554/stream,rtsp://192.168.1.101:554/stream
+CAMERA_NAMES=Front Door,Backyard
+
+# Detection Settings
+DETECTION_CONFIDENCE=0.5
+DETECTION_FPS=30
+
+# Storage Configuration
+PUBLIC_RECORDINGS_PATH=H:\SkripsiRecord\public
+EVIDENCE_RECORDINGS_PATH=H:\SkripsiRecord\evidence
+MAX_STORAGE_GB=100
+RETENTION_DAYS=30
+
+# Server Settings
+HOST=0.0.0.0
+PORT=8000
+```
+
+### Master Key Setup
+
+```bash
+# Generate master encryption key
+python -c "from modules.evidence import generate_master_key; generate_master_key()"
+```
+
+---
+
+## 📖 Usage
+
+### Start the System
 
 ```bash
 python main.py
 ```
 
-Buka browser: **http://localhost:8000**
+### Access Web Interface
+
+Open browser and navigate to:
+- **Live View**: http://localhost:8000/
+- **Gallery**: http://localhost:8000/gallery
+- **Analytics**: http://localhost:8000/analytics
+- **Decrypt**: http://localhost:8000/decrypt
+
+### Stop the System
+
+Press `Ctrl+C` in the terminal
 
 ---
 
-## 📁 Struktur Project
+## 🏗️ Architecture
 
 ```
-ProjectSkripsi/
-├── main.py              # Entry point utama (Web + Processing)
-├── demo.py              # Test komponen + live preview
-├── benchmark.py         # Ukur performa (untuk BAB 5)
-│
-├── modules/             # Core modules (terpisah & modular)
-│   ├── processor.py     # YOLO detection + Gaussian blur
-│   ├── recorder.py      # Video recording ke MP4
-│   ├── evidence.py      # Encrypted evidence storage
-│   ├── security.py      # AES-256-GCM encryption
-│   └── camera.py        # Camera capture
-│
-├── templates/           # HTML untuk web dashboard
-├── tools/
-│   ├── key_manager.py   # Kelola encryption key
-│   ├── decryptor.py     # Decrypt file evidence
-│   ├── camera_selector.py  # Pilih kamera
-│   └── verify_integrity.py # Demo tamper detection
-│
+SECURE EDGE
+├── main.py                 # FastAPI application entry point
+├── modules/
+│   ├── engine.py          # Core surveillance engine
+│   ├── recorder.py        # Video recording logic
+│   ├── evidence.py        # Encryption/decryption
+│   └── storage.py         # Storage management
+├── templates/             # Jinja2 HTML templates
+├── static/               # CSS, JS, assets
 ├── recordings/
-│   ├── public/          # Video blur (.mp4)
-│   └── evidence/        # Video encrypted (.enc)
-│
-├── keys/                # Encryption keys (BACKUP INI!)
-├── venv/                # Virtual environment
-│
-├── .env                 # Konfigurasi
-├── requirements.txt     # Dependencies
-├── CUDA_SETUP.md        # Panduan install CUDA
-└── README.md            # File ini
+│   ├── public/           # MP4/AVI recordings
+│   └── evidence/         # Encrypted .enc files
+├── models/               # YOLOv8 model files
+└── keys/                 # Encryption keys (gitignored)
 ```
+
+### Technology Stack
+
+**Backend:**
+- FastAPI + Uvicorn (async web server)
+- OpenCV (video processing)
+- Ultralytics YOLOv8 (AI detection)
+- cryptography (AES-256-GCM)
+- psutil (system metrics)
+
+**Frontend:**
+- Jinja2 Templates
+- Chart.js (analytics visualizations)
+- Lucide Icons
+- Vanilla JavaScript
 
 ---
 
-## ⚙️ Konfigurasi (.env)
+## 🔐 Security
 
-```env
-# Multi-camera sources (comma-separated: 0, 1, rtsp://...)
-CAMERA_SOURCES=0,1,rtsp://192.XXX.XXX.XXX:PORT
+### Encryption Specifications
 
-# Device (cuda untuk GPU, cpu untuk CPU only)
-DEVICE=cuda
+- **Algorithm**: AES-256-GCM (Galois/Counter Mode)
+- **Key Derivation**: SHA-256
+- **Authentication**: Built-in AEAD (Authenticated Encryption with Associated Data)
+- **File Format**: Custom `.enc` with metadata header
 
-# Intensitas blur (angka ganjil, makin tinggi makin blur)
-BLUR_INTENSITY=51
+### Security Best Practices
 
-# Port web server
-SERVER_PORT=8000
-```
+1. **Never commit** `master.key` to version control
+2. **Use strong PINs** for key protection (8+ characters)
+3. **Backup encryption keys** securely
+4. **Rotate keys** periodically for long-term deployments
+5. **Restrict network access** to trusted devices only
 
----
-
-## 🎮 Cara Penggunaan
-
-### Monitoring Harian (Satpam)
-1. Buka `http://localhost:8000`
-2. Lihat live stream (wajah otomatis blur)
-3. Klik recordings untuk playback
-
-### Investigasi Forensik (Manager/Polisi)
-```bash
-# List file evidence
-python tools/decryptor.py --list
-
-# Decrypt dan play
-python tools/decryptor.py -f evidence_xxx.enc
-
-# Export ke MP4
-python tools/decryptor.py -f evidence.enc --export output.mp4
-```
-
-### Pilih Kamera
-```bash
-# List kamera tersedia
-python demo.py --cameras
-
-# Gunakan kamera tertentu
-python demo.py --camera 1
-
-# Atau edit .env
-CAMERA_SOURCES=0,1,rtsp://...
-```
+For detailed security analysis, see [`encryption_flow.md`](encryption_flow.md)
 
 ---
 
-## 📊 Benchmark (Untuk BAB 5 Skripsi)
+## 📊 Version History
 
-```bash
-# Jalankan benchmark 60 detik
-python benchmark.py --duration 60
+### v1.3.0 (2026-01-01) - Current
+- ✅ Comprehensive analytics dashboard
+- ✅ Multi-drive support
+- ✅ Search functionality
+- ✅ Enhanced chart tooltips
 
-# Output: latency, FPS, GPU usage → disimpan ke CSV
-```
+### v1.2.0 (2025-12-31)
+- ✅ Dashboard decryption system
+- ✅ Encryption documentation
+- ✅ PIN-protected access
 
----
+### v1.1.0 (2025-12-30)
+- ✅ Multi-camera support
+- ✅ YOLOv8 integration
+- ✅ Web interface
 
-## 🔒 Fitur Keamanan
+### v1.0.0 (2025-12-29)
+- ✅ Initial release
+- ✅ Basic recording
+- ✅ FastAPI backend
 
-| Fitur | Deskripsi |
-|-------|-----------|
-| **AES-256-GCM** | Military-grade encryption |
-| **SHA-256 Hash** | Integrity verification |
-| **Tamper Detection** | Jika file diubah → decrypt gagal |
-
-Demo tamper detection:
-```bash
-python tools/verify_integrity.py
-```
-
----
-
-## ⚠️ Catatan Penting
-
-1. **BACKUP `keys/master.key`** - Tanpa file ini, evidence tidak bisa didecrypt!
-2. **Aktifkan venv** setiap buka terminal baru: `.\venv\Scripts\activate`
-3. **Blur tidak bisa di-reverse** - Itu sebabnya kita simpan evidence terenkripsi
-
----
-
-## 🔑 Key Management
-
-### First-Time Setup
-```bash
-python setup.py
-```
-Script ini akan:
-- Generate encryption key baru
-- Buat backup otomatis
-- Download face detection model
-
-### Backup Key (WAJIB!)
-```bash
-python tools/key_manager.py --backup
-```
-Output: `keys/backups/master_YYYYMMDD_HHMMSS.key`
-
-### Restore Key
-```bash
-python tools/key_manager.py --restore keys/backups/master_xxx.key
-```
-
-### Lihat Info Key
-```bash
-python tools/key_manager.py
-```
-
----
-
-## ❓ Troubleshooting
-
-### CUDA Not Available
-```bash
-# 1. Cek nvidia driver
-nvidia-smi
-
-# 2. Reinstall PyTorch dengan CUDA
-pip uninstall torch torchvision -y
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
-
-# 3. Verifikasi
-python -c "import torch; print(torch.cuda.is_available())"
-```
-
-### Camera Not Found
-
-```bash
-python demo.py --cameras  # List kamera
-```
-
-### RTSP Not Working
-
-1.  **Cek Port**: Pastikan port di `.env` sama dengan port yang bisa dibuka di VLC (Contoh: 1935 vs 1395).
-2.  **Koneksi Jaringan**: Pastikan IP kamera bisa di-ping dari PC ini.
-3.  **Transport Protocol**: Sistem dipaksa menggunakan **RTSP over TCP** untuk stabilitas. Pastikan kamera mendukung mode TCP.
-
-### ModuleNotFoundError
-```bash
-pip install -r requirements.txt
-```
+See [`VERSION.md`](VERSION.md) for complete changelog.
 
 ---
 
 ## 📝 License
 
-Academic Use Only - Skripsi Project © 2024
+This project is developed as part of an undergraduate thesis (Skripsi) at [Your University].
+
+**For Academic Use Only**
+
+---
+
+## 👨‍💻 Author
+
+**[Your Name]**  
+Undergraduate Student - Computer Science  
+[Your University]  
+Year: 2025-2026
+
+---
+
+## 🙏 Acknowledgments
+
+- Ultralytics for YOLOv8
+- FastAPI team for excellent framework
+- OpenCV community
+- Chart.js for visualization library
+
+---
+
+## 📧 Contact
+
+For questions or issues, please contact:
+- Email: [your.email@university.edu]
+- GitHub: [@yourusername](https://github.com/yourusername)
+
+---
+
+**⭐ Star this repo if you find it useful!**
