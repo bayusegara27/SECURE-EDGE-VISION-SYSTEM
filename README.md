@@ -15,15 +15,26 @@
 ---
 
 ## 📖 Table of Contents
-- [🎯 Overview](#-overview)
-- [✨ Key Features](#-key-features)
-- [🏗️ System Architecture](#️-system-architecture)
-- [📚 Wiki Documentation](#-wiki-documentation)
-- [💻 Get Started](#-get-started)
-- [⚙️ Configuration](#️-configuration)
-- [🔐 Security Specifications](#-security-specifications)
-- [📊 Version History](#-version-history)
-- [👨‍💻 Project Info](#-project-info)
+- [🛡️ SECURE EDGE](#️-secure-edge)
+    - [Intelligent Surveillance System with Dual-Path Encryption](#intelligent-surveillance-system-with-dual-path-encryption)
+  - [📖 Table of Contents](#-table-of-contents)
+  - [🎯 Overview](#-overview)
+  - [✨ Key Features](#-key-features)
+    - [🤖 Intelligent AI Engine](#-intelligent-ai-engine)
+    - [🔒 Dual-Path Security](#-dual-path-security)
+    - [📊 Advanced Analytics](#-advanced-analytics)
+  - [🏗️ System Architecture](#️-system-architecture)
+  - [📚 Wiki Documentation](#-wiki-documentation)
+  - [💻 Get Started](#-get-started)
+    - [1. Requirements](#1-requirements)
+    - [2. Quick Install](#2-quick-install)
+    - [3. Run Application](#3-run-application)
+  - [⚙️ Configuration](#️-configuration)
+  - [🔐 Security Specifications](#-security-specifications)
+  - [📊 Version History](#-version-history)
+    - [🏷️ v1.3.0-stable (Current)](#️-v130-stable-current)
+    - [🏷️ v1.2.x](#️-v12x)
+  - [👨‍💻 Project Info](#-project-info)
 
 ---
 
