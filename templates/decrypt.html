@@ -235,8 +235,51 @@
                 <i data-lucide="lock" size="18"></i>
                 Evidence Decryptor
             </div>
-            <div class="header-status">
-                <span id="fileCount">0 encrypted files</span>
+            <div class="header-right" style="display: flex; align-items: center; gap: 12px;">
+                <!-- Search Bar -->
+                <div style="position: relative;">
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        placeholder="Search files..." 
+                        style="
+                            padding: 8px 60px 8px 12px;
+                            background: var(--bg-panel);
+                            border: 1px solid var(--border);
+                            border-radius: 6px;
+                            color: var(--text);
+                            font-size: 13px;
+                            width: 280px;
+                            outline: none;
+                            transition: border-color 0.2s;
+                        "
+                        oninput="filterFiles()"
+                        onkeydown="if(event.key === 'Escape') clearSearch()"
+                    >
+                    <button 
+                        id="clearSearchBtn"
+                        onclick="clearSearch()"
+                        style="
+                            position: absolute;
+                            right: 32px;
+                            top: 50%;
+                            transform: translateY(-50%);
+                            background: none;
+                            border: none;
+                            color: var(--text-dim);
+                            cursor: pointer;
+                            padding: 4px;
+                            display: none;
+                            align-items: center;
+                            justify-content: center;
+                        "
+                        title="Clear search (Esc)"
+                    >
+                        <i data-lucide="x" size="14"></i>
+                    </button>
+                    <i data-lucide="search" size="14" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-dim); pointer-events: none;"></i>
+                </div>
+                <span id="fileCount" style="font-size: 13px; color: var(--text-dim);">0 encrypted files</span>
             </div>
         </header>
 
@@ -387,6 +430,50 @@
             } catch (e) {
                 console.error('Failed to load:', e);
             }
+        }
+
+        // Filter files based on search input
+        function filterFiles() {
+            const searchInput = document.getElementById('searchInput');
+            const searchTerm = searchInput.value.toLowerCase();
+            const clearBtn = document.getElementById('clearSearchBtn');
+            const rows = document.querySelectorAll('.file-table tbody tr');
+            let visibleCount = 0;
+            
+            // Show/hide clear button
+            clearBtn.style.display = searchTerm ? 'flex' : 'none';
+            lucide.createIcons(); // Re-render icons
+            
+            rows.forEach(row => {
+                const filename = row.cells[0].textContent.toLowerCase();
+                const date = row.cells[1].textContent.toLowerCase();
+                const size = row.cells[2].textContent.toLowerCase();
+                
+                const matches = filename.includes(searchTerm) || 
+                               date.includes(searchTerm) || 
+                               size.includes(searchTerm);
+                
+                if (matches) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            // Update file count
+            const totalCount = rows.length;
+            const countText = searchTerm 
+                ? `${visibleCount} of ${totalCount} files` 
+                : `${totalCount} encrypted files`;
+            document.getElementById('fileCount').textContent = countText;
+        }
+
+        // Clear search
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            filterFiles();
+            document.getElementById('searchInput').focus();
         }
 
         // Select file

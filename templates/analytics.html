@@ -3,139 +3,214 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analytics - Secure Edge</title>
+    <title>SECURE EDGE | Intelligence Analytics</title>
     <link rel="stylesheet" href="/static/css/shared.css">
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
-        :root {
-            --chart-blue: #3b82f6;
-            --chart-green: #10b981;
-            --chart-yellow: #f59e0b;
-            --chart-red: #ef4444;
-            --chart-purple: #8b5cf6;
-        }
-
         .analytics-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            padding: 24px;
-            flex: 1;
+            grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+            gap: 16px;
+            padding: 16px;
+            height: calc(100vh - var(--header-height) - 32px);
             overflow-y: auto;
         }
 
-        @media (max-width: 1100px) {
-            .analytics-grid { grid-template-columns: 1fr; }
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.2s;
         }
 
-        .stat-card {
-            background: var(--bg-panel);
-            border-radius: 12px;
-            padding: 24px;
-            border: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        .stat-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
         }
 
         .stat-card h3 {
-            margin: 0 0 20px 0;
-            font-size: 13px;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 16px;
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-weight: 600;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .chart-container {
             position: relative;
-            height: 280px;
-            width: 100%;
+            height: 220px;
+            margin-bottom: 12px;
         }
 
-        .health-grid {
+        .metric-row {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            flex: 1;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
         }
 
-        .health-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            background: var(--bg-card);
+        .metric-box {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border);
             border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.03);
+            padding: 12px;
+            text-align: center;
         }
 
-        .health-value {
-            font-size: 28px;
+        .metric-value {
+            font-size: 24px;
             font-weight: 700;
             color: var(--accent);
             margin-bottom: 4px;
         }
 
-        .health-label {
-            font-size: 11px;
+        .metric-label {
+            font-size: 10px;
             color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            transition: width 0.3s ease;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 12px;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .detail-value {
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
             text-transform: uppercase;
         }
 
-        .storage-info {
-            display: flex;
-            justify-content: space-around;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid var(--border);
-            font-size: 13px;
+        .status-healthy {
+            background: rgba(34, 197, 94, 0.1);
+            color: #22c55e;
         }
 
-        .badge-positive { color: #10b981; }
-        .badge-warning { color: #f59e0b; }
-        .badge-danger { color: #ef4444; }
+        .status-warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+        }
+
+        .status-critical {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .log-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            margin-top: 12px;
+        }
+
+        .log-table th {
+            text-align: left;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-dim);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 10px;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .log-table td {
+            padding: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .log-table tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
     </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Sidebar -->
-        <nav class="sidebar">
-            <div class="sidebar-logo">
-                <i data-lucide="shield" size="20" color="white"></i>
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="sidebar-logo">
+            <i data-lucide="shield" size="20" color="white"></i>
+        </div>
+        <div class="sidebar-nav">
+            <a href="/" class="nav-item" title="Live View">
+                <i data-lucide="monitor" size="20"></i>
+            </a>
+            <a href="/gallery" class="nav-item" title="Recordings">
+                <i data-lucide="folder" size="20"></i>
+            </a>
+            <a href="/analytics" class="nav-item active" title="Analytics">
+                <i data-lucide="bar-chart-2" size="20"></i>
+            </a>
+            <a href="/decrypt" class="nav-item" title="Decrypt Evidence">
+                <i data-lucide="lock" size="20"></i>
+            </a>
+        </div>
+        <div class="sidebar-bottom">
+            <div class="nav-item" title="Settings">
+                <i data-lucide="settings" size="20"></i>
             </div>
-            <div class="sidebar-nav">
-                <a href="/" class="nav-item" title="Live View">
-                    <i data-lucide="monitor" size="20"></i>
-                </a>
-                <a href="/gallery" class="nav-item" title="Recordings">
-                    <i data-lucide="folder" size="20"></i>
-                </a>
-                <a href="/analytics" class="nav-item active" title="Analytics">
-                    <i data-lucide="bar-chart-2" size="20"></i>
-                </a>
-                <a href="/decrypt" class="nav-item" title="Decrypt Evidence">
-                    <i data-lucide="lock" size="20"></i>
-                </a>
-            </div>
-            <div class="sidebar-bottom">
-                <div class="nav-item" title="Settings">
-                    <i data-lucide="settings" size="20"></i>
-                </div>
-            </div>
-        </nav>
+        </div>
+    </nav>
 
+    <!-- Main Content -->
+    <div style="margin-left: var(--sidebar-width);">
         <main class="main-content">
+            <!-- Header -->
             <header class="header">
                 <div class="header-title">
                     <i data-lucide="bar-chart-2" size="18"></i>
                     Intelligence Analytics
-                    <span style="margin-left: 20px; color: var(--text-dim); font-weight: normal; font-size: 13px;">Behavioral patterns and system metrics</span>
+                    <span style="margin-left: 12px; font-size: 12px; color: var(--text-dim); font-weight: normal;">Behavioral patterns and system metrics</span>
                 </div>
                 <div class="header-right">
                     <button class="toolbar-btn" onclick="loadAnalytics()">
@@ -145,83 +220,168 @@
                 </div>
             </header>
 
-            <div class="analytics-grid" style="overflow-y: auto;">
-                <!-- Detection Trends -->
+            <div class="analytics-grid">
+                <!-- Real-time Overview -->
                 <div class="stat-card">
-                    <h3><i data-lucide="trending-up" size="18"></i> Hourly Detection Intensity (Last 24h)</h3>
-                    <div class="chart-container">
+                    <h3><i data-lucide="activity" size="16"></i> Real-Time Overview</h3>
+                    <div class="metric-row">
+                        <div class="metric-box">
+                            <div class="metric-value" id="rtDetections">--</div>
+                            <div class="metric-label">Events Today</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-value" id="rtPeakHour">--</div>
+                            <div class="metric-label">Peak Hour</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-value" id="rtAvgHour">--</div>
+                            <div class="metric-label">Avg/Hour</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Storage Health -->
+                <div class="stat-card">
+                    <h3><i data-lucide="hard-drive" size="16"></i> Storage Health</h3>
+                    <div style="margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                            <span style="font-size: 12px; color: var(--text-dim);">Usage</span>
+                            <span style="font-size: 12px; font-weight: 600;" id="storageUsagePct">--</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="storageProgressBar" style="width: 0%"></div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-dim); margin-top: 4px;">
+                            <span id="storageUsed">--</span>
+                            <span id="storageLimit">--</span>
+                        </div>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-box">
+                            <div class="metric-value" id="daysRemaining">--</div>
+                            <div class="metric-label">Days Left</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-value" id="velocityRate">--</div>
+                            <div class="metric-label">MB/Hour</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detection Trends (Full Width) -->
+                <div class="stat-card full-width">
+                    <h3><i data-lucide="trending-up" size="16"></i> Hourly Detection Intensity (Last 24h)</h3>
+                    <div class="chart-container" style="height: 280px;">
                         <canvas id="trendsChart"></canvas>
                     </div>
                 </div>
 
                 <!-- Storage Distribution -->
                 <div class="stat-card">
-                    <h3><i data-lucide="database" size="18"></i> Storage Distribution & Forecast</h3>
+                    <h3><i data-lucide="pie-chart" size="16"></i> Storage Distribution</h3>
                     <div class="chart-container">
                         <canvas id="storageChart"></canvas>
                     </div>
-                    <div class="storage-info" id="storageSummary">
-                        <!-- Loaded via JS -->
+                    <div id="storageBreakdown"></div>
+                </div>
+
+                <!-- Storage Details -->
+                <div class="stat-card">
+                    <h3><i data-lucide="database" size="16"></i> Storage Details</h3>
+                    <div id="storageDetails"></div>
+                </div>
+
+                <!-- System Metrics -->
+                <div class="stat-card">
+                    <h3><i data-lucide="cpu" size="16"></i> System Metrics</h3>
+                    <div style="margin-bottom: 16px; padding: 12px; background: rgba(59, 130, 246, 0.05); border-radius: 8px;">
+                        <div style="font-size: 11px; color: var(--text-dim); margin-bottom: 6px;">
+                            <i data-lucide="folder" size="12"></i>
+                            Recordings Drive
+                        </div>
+                        <div style="font-size: 13px; font-weight: 600; color: var(--accent);" id="recordingsDrive">--</div>
+                        <div style="font-size: 10px; color: var(--text-dim); margin-top: 4px;" id="recordingsPath">--</div>
                     </div>
-                    <div class="health-item" style="margin-top: 15px; background: rgba(59, 130, 246, 0.05);">
-                        <div class="health-label">Estimated Days Remaining</div>
-                        <div class="health-value" id="valForecast" style="font-size: 20px;">--</div>
+                    
+                    <div class="metric-row">
+                        <div class="metric-box">
+                            <div class="metric-value" id="diskFree">--</div>
+                            <div class="metric-label">Free Space (GB)</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-value" id="diskPct">--</div>
+                            <div class="metric-label">Disk Usage</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-value" id="evidenceCount">--</div>
+                            <div class="metric-label">Evidence Files</div>
+                        </div>
+                    </div>
+                    
+                    <!-- All Drives Breakdown -->
+                    <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+                        <div style="font-size: 11px; color: var(--text-dim); margin-bottom: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                            <i data-lucide="hard-drive" size="12"></i>
+                            All Drives
+                        </div>
+                        <div id="allDrivesBreakdown"></div>
                     </div>
                 </div>
 
-                <!-- System Health & Forensic Count -->
+                <!-- File Statistics -->
                 <div class="stat-card">
-                    <h3><i data-lucide="activity" size="18"></i> System Metrics</h3>
-                    <div class="health-grid" id="healthGrid">
-                        <div class="health-item">
-                            <div class="health-value" id="valDisk">--</div>
-                            <div class="health-label">Free Space (GB)</div>
+                    <h3><i data-lucide="file-text" size="16"></i> File Statistics</h3>
+                    <div class="metric-row">
+                        <div class="metric-box">
+                            <div class="metric-value" id="publicFiles">--</div>
+                            <div class="metric-label">Public Files</div>
                         </div>
-                        <div class="health-item">
-                            <div class="health-value text-accent" id="valDetections">--</div>
-                            <div class="health-label">Total Events</div>
+                        <div class="metric-box">
+                            <div class="metric-value" id="avgPublicSize">--</div>
+                            <div class="metric-label">Avg Public</div>
                         </div>
-                        <div class="health-item">
-                            <div class="health-value" id="valEvidence">--</div>
-                            <div class="health-label">Evidence Files</div>
-                        </div>
-                        <div class="health-item">
-                            <div class="health-value" id="valDiskPct">--</div>
-                            <div class="health-label">Disk Usage %</div>
+                        <div class="metric-box">
+                            <div class="metric-value" id="avgEvidenceSize">--</div>
+                            <div class="metric-label">Avg Evidence</div>
                         </div>
                     </div>
-                </div>
-
-                <!-- Detection Classification -->
-                <div class="stat-card">
-                    <h3><i data-lucide="users" size="18"></i> Behavioral Classification</h3>
-                    <div class="chart-container" style="height: 200px;">
-                        <canvas id="classChart"></canvas>
+                    <div style="margin-top: 16px; padding: 12px; background: rgba(139, 92, 246, 0.05); border-radius: 8px; text-align: center;">
+                        <div style="font-size: 11px; color: var(--text-dim); margin-bottom: 4px;">Compression Ratio</div>
+                        <div style="font-size: 20px; font-weight: 700; color: #8b5cf6;" id="compressionRatio">--</div>
+                        <div style="font-size: 10px; color: var(--text-dim); margin-top: 4px;" id="compressionDesc">--</div>
                     </div>
                 </div>
 
                 <!-- Camera Activity -->
                 <div class="stat-card">
-                    <h3><i data-lucide="video" size="18"></i> Activity Density by Node</h3>
-                    <div class="chart-container">
+                    <h3><i data-lucide="video" size="16"></i> Camera Activity</h3>
+                    <div class="chart-container" style="height: 200px;">
                         <canvas id="cameraChart"></canvas>
                     </div>
                 </div>
 
-                <!-- Recent Investigative Logs (FULL WIDTH) -->
-                <div class="stat-card" style="grid-column: 1 / -1;">
-                    <h3><i data-lucide="list" size="18"></i> Recent Activity</h3>
-                    <div style="max-height: 300px; overflow-y: auto; margin-top: 10px;">
-                        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                            <thead style="position: sticky; top: 0; background: var(--bg-panel); color: var(--text-dim);">
+                <!-- Classification -->
+                <div class="stat-card">
+                    <h3><i data-lucide="users" size="16"></i> Behavioral Classification</h3>
+                    <div class="chart-container" style="height: 200px;">
+                        <canvas id="classChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Recent Activity (Full Width) -->
+                <div class="stat-card full-width">
+                    <h3><i data-lucide="list" size="16"></i> Recent Activity</h3>
+                    <div style="max-height: 300px; overflow-y: auto;">
+                        <table class="log-table">
+                            <thead>
                                 <tr>
-                                    <th style="text-align: left; padding: 12px; border-bottom: 1px solid var(--border);">Timestamp</th>
-                                    <th style="text-align: left; padding: 12px; border-bottom: 1px solid var(--border);">Node</th>
-                                    <th style="text-align: left; padding: 12px; border-bottom: 1px solid var(--border);">Classification</th>
-                                    <th style="text-align: left; padding: 12px; border-bottom: 1px solid var(--border);">Confidence</th>
+                                    <th>Timestamp</th>
+                                    <th>Node</th>
+                                    <th>Classification</th>
+                                    <th>Confidence</th>
                                 </tr>
                             </thead>
-                            <tbody id="logTableBody" style="color: var(--text);">
+                            <tbody id="logTableBody">
                                 <!-- Loaded via JS -->
                             </tbody>
                         </table>
@@ -234,7 +394,6 @@
     <script>
         lucide.createIcons();
         
-        // Chart Instances
         let trendsChart, storageChart, cameraChart, classChart;
 
         async function loadAnalytics() {
@@ -242,47 +401,122 @@
                 const res = await fetch('/api/analytics');
                 const data = await res.json();
                 
+                renderRealtime(data.trends, data.camera_activity);
+                renderStorageHealth(data.storage);
                 renderTrends(data.trends);
                 renderStorage(data.storage);
-                renderHealth(data.health, data.storage);
-                renderClassification(data.classification);
+                renderStorageDetails(data.storage);
+                renderSystemMetrics(data.health, data.storage);
+                renderFileStats(data.storage);
                 renderCameraActivity(data.camera_activity);
+                renderClassification(data.classification);
                 renderLogs(data.recent_logs);
+                
+                lucide.createIcons();
             } catch (e) {
                 console.error("Failed to load analytics:", e);
             }
         }
 
+        function renderRealtime(trends, camera_activity) {
+            document.getElementById('rtDetections').textContent = trends.total_today || 0;
+            document.getElementById('rtPeakHour').textContent = trends.peak_hour || '--';
+            
+            const avgPerHour = trends.total_today > 0 ? (trends.total_today / 24).toFixed(1) : 0;
+            document.getElementById('rtAvgHour').textContent = avgPerHour;
+        }
+
+        function renderStorageHealth(storage) {
+            const usedGB = (storage.total_mb / 1024).toFixed(2);
+            const pct = ((storage.total_mb / 1024) / storage.max_gb * 100).toFixed(1);
+            
+            document.getElementById('storageUsagePct').textContent = `${pct}%`;
+            document.getElementById('storageUsed').textContent = `${usedGB} GB used`;
+            document.getElementById('storageLimit').textContent = `${storage.max_gb} GB limit`;
+            document.getElementById('storageProgressBar').style.width = `${Math.min(pct, 100)}%`;
+            
+            // Color coding
+            const progressBar = document.getElementById('storageProgressBar');
+            if (pct > 90) {
+                progressBar.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
+            } else if (pct > 70) {
+                progressBar.style.background = 'linear-gradient(90deg, #f59e0b, #d97706)';
+            } else {
+                progressBar.style.background = 'linear-gradient(90deg, #3b82f6, #10b981)';
+            }
+            
+            document.getElementById('daysRemaining').textContent = storage.days_left;
+            document.getElementById('velocityRate').textContent = storage.hourly_rate_mb;
+        }
+
         function renderTrends(trends) {
             const ctx = document.getElementById('trendsChart').getContext('2d');
             
-            if (trendsChart) trendsChart.destroy();
-            
-            trendsChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: trends.labels,
-                    datasets: [{
-                        label: 'Detections',
-                        data: trends.values,
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        fill: true,
-                        tension: 0.4,
-                        borderWidth: 2,
-                        pointRadius: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
-                        x: { grid: { display: false } }
+            if (trendsChart) {
+                // Update existing chart data instead of destroying
+                trendsChart.data.labels = trends.labels;
+                trendsChart.data.datasets[0].data = trends.values;
+                trendsChart.update('none'); // 'none' = no animation
+            } else {
+                // Create new chart only if doesn't exist
+                trendsChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: trends.labels,
+                        datasets: [{
+                            label: 'Detections',
+                            data: trends.values,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            borderWidth: 2,
+                            pointRadius: 3,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: '#3b82f6',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: false, // Disable animations
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                enabled: true,
+                                backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                                titleColor: '#fff',
+                                bodyColor: '#fff',
+                                borderColor: '#3b82f6',
+                                borderWidth: 1,
+                                padding: 12,
+                                displayColors: false,
+                                callbacks: {
+                                    title: (items) => `Time: ${items[0].label}`,
+                                    label: (item) => `Detections: ${item.parsed.y}`
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: 'rgba(255,255,255,0.05)' },
+                                ticks: { color: '#94a3b8' }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: '#94a3b8', maxRotation: 0 }
+                            }
+                        }
                     }
-                }
-            });
+                });
+            }
         }
 
         function renderStorage(storage) {
@@ -290,57 +524,247 @@
             const cams = Object.keys(storage.by_camera);
             const sizes = Object.values(storage.by_camera);
 
-            if (storageChart) storageChart.destroy();
-
-            storageChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: cams,
-                    datasets: [{
-                        data: sizes,
-                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { 
-                        legend: { 
-                            position: 'right', 
-                            labels: { color: '#94a3b8', boxWidth: 10, font: { size: 10 } } 
-                        } 
+            if (storageChart) {
+                // Update existing chart
+                storageChart.data.labels = cams;
+                storageChart.data.datasets[0].data = sizes;
+                storageChart.update('none');
+            } else {
+                // Create new chart
+                storageChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: cams,
+                        datasets: [{
+                            data: sizes,
+                            backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: { color: '#94a3b8', boxWidth: 12, font: { size: 11 } }
+                            },
+                            tooltip: {
+                                enabled: true,
+                                backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                                titleColor: '#fff',
+                                bodyColor: '#fff',
+                                borderColor: '#3b82f6',
+                                borderWidth: 1,
+                                padding: 12,
+                                callbacks: {
+                                    label: (item) => `${item.label}: ${(item.parsed / 1024).toFixed(2)} GB`
+                                }
+                            }
+                        }
                     }
-                }
-            });
+                });
+            }
 
-            document.getElementById('storageSummary').innerHTML = `
-                <div style="display: flex; flex-direction: column; gap: 5px; width: 100%;">
-                    <div style="display: flex; justify-content: space-between;">
-                        <span>Public & Evidence: <strong>${(storage.total_mb/1024).toFixed(2)} GB</strong></span>
-                        <span>Limit: <strong>${storage.max_gb} GB</strong></span>
+            // Breakdown
+            const publicPct = (storage.public_mb / storage.total_mb * 100).toFixed(1);
+            const evidencePct = (storage.evidence_mb / storage.total_mb * 100).toFixed(1);
+            
+            document.getElementById('storageBreakdown').innerHTML = `
+                <div class="detail-row">
+                    <div class="detail-label">
+                        <i data-lucide="video" size="12"></i>
+                        Public Recordings
                     </div>
-                    <div style="height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; position: relative;">
-                        <div style="position: absolute; left: 0; top: 0; height: 100%; width: ${Math.min((storage.total_mb/1024)/storage.max_gb * 100, 100)}%; background: var(--accent); border-radius: 3px;"></div>
+                    <div class="detail-value">${(storage.public_mb/1024).toFixed(2)} GB (${publicPct}%)</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">
+                        <i data-lucide="lock" size="12"></i>
+                        Evidence (Encrypted)
                     </div>
-                    <div style="font-size: 11px; color: var(--text-dim); margin-top: 5px;">
-                        Usage Velocity: <strong>${storage.hourly_rate_mb} MB/hr</strong>
-                    </div>
+                    <div class="detail-value">${(storage.evidence_mb/1024).toFixed(2)} GB (${evidencePct}%)</div>
                 </div>
             `;
-            document.getElementById('valForecast').textContent = `${storage.days_left} Days`;
         }
 
-        function renderHealth(health, storage) {
-            document.getElementById('valDisk').textContent = health.disk_free_gb.toFixed(1);
-            document.getElementById('valDetections').textContent = health.total_detections;
-            document.getElementById('valEvidence').textContent = health.evidence_files;
-            document.getElementById('valDiskPct').textContent = `${health.disk_percent}%`;
+        function renderStorageDetails(storage) {
+            let html = '';
             
-            const diskValue = document.getElementById('valDiskPct');
-            if (health.disk_percent > 90) diskValue.style.color = '#ef4444';
-            else if (health.disk_percent > 70) diskValue.style.color = '#f59e0b';
-            else diskValue.style.color = '#10b981';
+            html += `
+                <div class="detail-row">
+                    <div class="detail-label">
+                        <i data-lucide="clock" size="12"></i>
+                        Hourly Rate
+                    </div>
+                    <div class="detail-value">${storage.hourly_rate_mb} MB/hr</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">
+                        <i data-lucide="calendar" size="12"></i>
+                        Daily Rate
+                    </div>
+                    <div class="detail-value">${(storage.hourly_rate_mb * 24).toFixed(1)} MB/day</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">
+                        <i data-lucide="calendar-days" size="12"></i>
+                        Weekly Rate
+                    </div>
+                    <div class="detail-value">${(storage.hourly_rate_mb * 24 * 7 / 1024).toFixed(2)} GB/week</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">
+                        <i data-lucide="calendar-range" size="12"></i>
+                        Monthly (Est)
+                    </div>
+                    <div class="detail-value">${(storage.hourly_rate_mb * 24 * 30 / 1024).toFixed(2)} GB/month</div>
+                </div>
+            `;
+            
+            // Per-camera
+            for (const [cam, sizeMB] of Object.entries(storage.by_camera)) {
+                const pct = (sizeMB / storage.total_mb * 100).toFixed(1);
+                html += `
+                    <div class="detail-row">
+                        <div class="detail-label">
+                            <i data-lucide="camera" size="12"></i>
+                            ${cam.toUpperCase()}
+                        </div>
+                        <div class="detail-value">${(sizeMB/1024).toFixed(2)} GB (${pct}%)</div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('storageDetails').innerHTML = html;
+        }
+
+        function renderSystemMetrics(health, storage) {
+            // Recordings Drive Info
+            document.getElementById('recordingsDrive').textContent = health.recordings_drive || '--';
+            document.getElementById('recordingsPath').textContent = storage.recordings_path || '--';
+            
+            // Main Metrics
+            document.getElementById('diskFree').textContent = health.disk_free_gb.toFixed(1);
+            document.getElementById('diskPct').textContent = `${health.disk_percent}%`;
+            document.getElementById('evidenceCount').textContent = health.evidence_files;
+            
+            const diskPctEl = document.getElementById('diskPct');
+            if (health.disk_percent > 90) diskPctEl.style.color = '#ef4444';
+            else if (health.disk_percent > 70) diskPctEl.style.color = '#f59e0b';
+            else diskPctEl.style.color = '#10b981';
+            
+            // All Drives Breakdown
+            const allDisks = health.all_disks || [];
+            const recordingsDrive = health.recordings_drive || '';
+            
+            let drivesHTML = '';
+            for (const disk of allDisks) {
+                const isRecordingsDrive = disk.drive.startsWith(recordingsDrive) || disk.mountpoint.startsWith(recordingsDrive);
+                const bgColor = isRecordingsDrive ? 'rgba(59, 130, 246, 0.05)' : 'rgba(255, 255, 255, 0.02)';
+                const borderColor = isRecordingsDrive ? 'rgba(59, 130, 246, 0.3)' : 'var(--border)';
+                
+                let barColor = '#10b981'; // Green
+                if (disk.percent > 90) barColor = '#ef4444'; // Red
+                else if (disk.percent > 70) barColor = '#f59e0b'; // Orange
+                
+                drivesHTML += `
+                    <div style="margin-bottom: 12px; padding: 10px; background: ${bgColor}; border: 1px solid ${borderColor}; border-radius: 6px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <i data-lucide="${isRecordingsDrive ? 'folder-open' : 'hard-drive'}" size="14" style="color: ${isRecordingsDrive ? '#3b82f6' : 'var(--text-dim)'}"></i>
+                                <span style="font-weight: 600; font-size: 12px;">${disk.drive}</span>
+                                ${isRecordingsDrive ? '<span style="font-size: 9px; padding: 2px 6px; background: rgba(59, 130, 246, 0.2); color: #3b82f6; border-radius: 4px; margin-left: 4px;">RECORDINGS</span>' : ''}
+                            </div>
+                            <div style="font-size: 11px; color: var(--text-dim);">
+                                ${disk.used_gb.toFixed(1)} / ${disk.total_gb.toFixed(1)} GB
+                            </div>
+                        </div>
+                        <div style="height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden;">
+                            <div style="height: 100%; width: ${disk.percent}%; background: ${barColor}; transition: width 0.3s;"></div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 10px; color: var(--text-dim);">
+                            <span>${disk.percent.toFixed(1)}% used</span>
+                            <span>${disk.free_gb.toFixed(1)} GB free</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('allDrivesBreakdown').innerHTML = drivesHTML || '<div style="text-align: center; color: var(--text-dim); font-size: 11px; padding: 12px;">No drives detected</div>';
+        }
+
+        function renderFileStats(storage) {
+            document.getElementById('publicFiles').textContent = storage.public_files || 0;
+            document.getElementById('avgPublicSize').textContent = `${storage.avg_public_size_mb.toFixed(1)} MB`;
+            document.getElementById('avgEvidenceSize').textContent = `${storage.avg_evidence_size_mb.toFixed(1)} MB`;
+            
+            const ratio = storage.compression_ratio;
+            document.getElementById('compressionRatio').textContent = `${ratio.toFixed(2)}x`;
+            
+            let desc = '';
+            if (ratio < 0.5) desc = 'Excellent compression';
+            else if (ratio < 0.8) desc = 'Good compression';
+            else if (ratio < 1.2) desc = 'Similar sizes';
+            else desc = 'Evidence larger than public';
+            
+            document.getElementById('compressionDesc').textContent = desc;
+        }
+
+        function renderCameraActivity(camera_activity) {
+            const ctx = document.getElementById('cameraChart').getContext('2d');
+            const cams = Object.keys(camera_activity);
+            const values = Object.values(camera_activity);
+
+            if (cameraChart) {
+                // Update existing chart
+                cameraChart.data.labels = cams;
+                cameraChart.data.datasets[0].data = values;
+                cameraChart.update('none');
+            } else {
+                // Create new chart
+                cameraChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: cams,
+                        datasets: [{
+                            label: 'Events',
+                            data: values,
+                            backgroundColor: '#3b82f6',
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                enabled: true,
+                                backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                                titleColor: '#fff',
+                                bodyColor: '#fff',
+                                borderColor: '#3b82f6',
+                                borderWidth: 1,
+                                padding: 12
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: 'rgba(255,255,255,0.05)' },
+                                ticks: { color: '#94a3b8' }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: '#94a3b8' }
+                            }
+                        }
+                    }
+                });
+            }
         }
 
         function renderClassification(classification) {
@@ -348,90 +772,74 @@
             const labels = Object.keys(classification);
             const values = Object.values(classification);
 
-            if (classChart) classChart.destroy();
-
-            classChart = new Chart(ctx, {
-                type: 'bar',
-                indexAxis: 'y',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: values,
-                        backgroundColor: '#8b5cf6',
-                        borderRadius: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
-                        y: { grid: { display: false } }
+            if (classChart) {
+                // Update existing chart
+                classChart.data.labels = labels;
+                classChart.data.datasets[0].data = values;
+                classChart.update('none');
+            } else {
+                // Create new chart
+                classChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Count',
+                            data: values,
+                            backgroundColor: '#8b5cf6',
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                enabled: true,
+                                backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                                titleColor: '#fff',
+                                bodyColor: '#fff',
+                                borderColor: '#8b5cf6',
+                                borderWidth: 1,
+                                padding: 12
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                grid: { color: 'rgba(255,255,255,0.05)' },
+                                ticks: { color: '#94a3b8' }
+                            },
+                            y: {
+                                grid: { display: false },
+                                ticks: { color: '#94a3b8' }
+                            }
+                        }
                     }
-                }
-            });
-        }
-
-        function renderCameraActivity(activity) {
-            const ctx = document.getElementById('cameraChart').getContext('2d');
-            
-            if (cameraChart) cameraChart.destroy();
-
-            cameraChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: Object.keys(activity),
-                    datasets: [{
-                        label: 'Events',
-                        data: Object.values(activity),
-                        backgroundColor: 'rgba(123, 92, 246, 0.4)',
-                        borderColor: '#8b5cf6',
-                        borderWidth: 1,
-                        borderRadius: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
-                        x: { grid: { display: false } }
-                    }
-                }
-            });
+                });
+            }
         }
 
         function renderLogs(logs) {
-            const body = document.getElementById('logTableBody');
-            body.innerHTML = '';
-            
-            if (!logs || logs.length === 0) {
-                body.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: var(--text-dim);">No investigative activity recorded in metadata.</td></tr>';
-                return;
-            }
-
-            logs.forEach(log => {
-                const row = document.createElement('tr');
-                row.style.borderBottom = '1px solid rgba(255,255,255,0.02)';
-                row.innerHTML = `
-                    <td style="padding: 12px;">${log.timestamp}</td>
-                    <td style="padding: 12px; font-family: monospace; color: var(--accent);">${log.node}</td>
-                    <td style="padding: 12px;">${log.class}</td>
-                    <td style="padding: 12px;">
-                        <span style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; padding: 2px 8px; border-radius: 4px; font-size: 11px;">
-                            ${log.conf}
-                        </span>
-                    </td>
-                `;
-                body.appendChild(row);
-            });
+            const tbody = document.getElementById('logTableBody');
+            tbody.innerHTML = logs.map(log => `
+                <tr>
+                    <td>${log.timestamp}</td>
+                    <td><strong>${log.node.toUpperCase()}</strong></td>
+                    <td>${log.class}</td>
+                    <td><span class="status-badge status-healthy">${log.conf}</span></td>
+                </tr>
+            `).join('');
         }
 
-        // Initial Load
+        // Auto-refresh every 30 seconds
+        setInterval(loadAnalytics, 30000);
+        
+        // Initial load
         loadAnalytics();
-        setInterval(loadAnalytics, 30000); // Auto refresh every 30s
     </script>
 </body>
 </html>

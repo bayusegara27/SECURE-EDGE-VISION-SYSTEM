@@ -1,0 +1,80 @@
+SECURE EDGE - Intelligent Surveillance System
+Version 1.3.0
+Release Date: January 1, 2026
+
+==============================================
+CHANGELOG
+==============================================
+
+v1.3.0 (2026-01-01) - Analytics & System Enhancement
+-----------------------------------------------------
+[NEW] Comprehensive analytics dashboard with real-time metrics
+[NEW] Multi-drive support with automatic detection
+[NEW] Search functionality in decrypt page
+[NEW] Storage efficiency and peak activity analysis
+[IMPROVED] Chart tooltips and refresh behavior
+[IMPROVED] Disk space detection from actual recordings path
+[FIXED] Chart flicker during auto-refresh
+[FIXED] Emoji icons replaced with Lucide icons
+
+v1.2.0 (2025-12-31) - Encryption & Security
+-----------------------------------------------------
+[NEW] Dashboard decryption system with PIN protection
+[NEW] Encryption flow documentation
+[NEW] In-browser video playback with detection boxes
+[SECURITY] AES-256-GCM encryption implementation
+[DOCS] Complete security analysis for thesis
+
+v1.1.0 (2025-12-30) - Core Surveillance System
+-----------------------------------------------------
+[NEW] Multi-camera RTSP support
+[NEW] YOLOv8 AI detection
+[NEW] Dual recording (public + encrypted evidence)
+[NEW] Storage management with auto-cleanup
+[NEW] Web interface (live view, gallery, analytics)
+
+v1.0.0 (2025-12-29) - Initial Release
+-----------------------------------------------------
+[NEW] FastAPI backend architecture
+[NEW] Basic recording functionality
+[NEW] Single camera support
+[NEW] Simple web interface
+
+==============================================
+SYSTEM REQUIREMENTS
+==============================================
+
+- Python 3.11 or higher
+- Windows 10/11 (tested)
+- Minimum 8GB RAM
+- GPU recommended for AI detection
+- Network access for RTSP cameras
+
+==============================================
+TECHNOLOGY STACK
+==============================================
+
+Backend:
+- FastAPI + Uvicorn
+- OpenCV (cv2)
+- Ultralytics YOLOv8
+- cryptography (AES-256-GCM)
+- psutil
+
+Frontend:
+- Jinja2 Templates
+- Chart.js
+- Lucide Icons
+- Vanilla JavaScript
+
+==============================================
+AUTHOR
+==============================================
+
+Project: Undergraduate Thesis (Skripsi)
+Year: 2025-2026
+
+For detailed documentation, see:
+- encryption_flow.md (Encryption technical details)
+- VERSION.md (Complete version history)
+- README.md (Setup and usage guide)

@@ -1,0 +1,56 @@
+# Application Version
+VERSION = "1.3.0"
+VERSION_NAME = "Analytics & System Enhancement"
+RELEASE_DATE = "2026-01-01"
+
+# Version History
+CHANGELOG = {
+    "1.3.0": {
+        "date": "2026-01-01",
+        "name": "Analytics & System Enhancement",
+        "features": [
+            "Comprehensive analytics dashboard overhaul",
+            "Multi-drive support with automatic detection",
+            "Search functionality in decrypt page",
+            "Storage efficiency and peak activity analysis",
+            "Enhanced chart tooltips and smooth refresh"
+        ]
+    },
+    "1.2.0": {
+        "date": "2025-12-31",
+        "name": "Encryption & Security",
+        "features": [
+            "Dashboard decryption system with PIN protection",
+            "Encryption flow documentation",
+            "AES-256-GCM encryption implementation"
+        ]
+    },
+    "1.1.0": {
+        "date": "2025-12-30",
+        "name": "Core Surveillance System",
+        "features": [
+            "Multi-camera RTSP support",
+            "YOLOv8 AI detection",
+            "Dual recording system",
+            "Web interface (live view, gallery, analytics)"
+        ]
+    },
+    "1.0.0": {
+        "date": "2025-12-29",
+        "name": "Initial Release",
+        "features": [
+            "FastAPI backend architecture",
+            "Basic recording functionality",
+            "Single camera support"
+        ]
+    }
+}
+
+def get_version_info():
+    """Get current version information"""
+    return {
+        "version": VERSION,
+        "name": VERSION_NAME,
+        "release_date": RELEASE_DATE,
+        "changelog": CHANGELOG
+    }

@@ -311,10 +311,39 @@ async def get_analytics_data():
     hourly_rate = recent_mb if recent_mb > 1 else (current_total_mb / 24)
     hourly_rate = max(hourly_rate, 50) # Safety floor 50MB/hr
     
-    disk = psutil.disk_usage('.')
-    free_mb = disk.free / (1024 * 1024)
+    # Get disk usage from ACTUAL recordings path, not current directory
+    # Use public_path as reference since that's where most data is stored
+    recordings_disk = psutil.disk_usage(str(public_path))
+    
+    # Get all disk partitions for comprehensive analysis
+    all_disks = []
+    for partition in psutil.disk_partitions():
+        try:
+            usage = psutil.disk_usage(partition.mountpoint)
+            all_disks.append({
+                "drive": partition.device,
+                "mountpoint": partition.mountpoint,
+                "total_gb": round(usage.total / (1024**3), 2),
+                "used_gb": round(usage.used / (1024**3), 2),
+                "free_gb": round(usage.free / (1024**3), 2),
+                "percent": usage.percent,
+                "fstype": partition.fstype
+            })
+        except (PermissionError, OSError):
+            # Skip drives that can't be accessed
+            continue
+    
+    # Calculate remaining space based on CONFIGURED LIMIT, not total disk
+    max_storage_mb = system.config.max_storage_gb * 1024  # Convert GB to MB
+    remaining_mb = max_storage_mb - current_total_mb  # Space left until limit
+    
     # Project days left based on hourly rate * 24
-    days_left = round(free_mb / (hourly_rate * 24), 1)
+    # If remaining is negative (over limit), show 0 days
+    if remaining_mb <= 0:
+        days_left = 0.0
+    else:
+        daily_rate_mb = hourly_rate * 24
+        days_left = round(remaining_mb / daily_rate_mb, 1) if daily_rate_mb > 0 else 999.9
 
     # 4. Forensic Markers
     evidence_count = len(list(evidence_path.rglob("*.enc")))
@@ -328,6 +357,22 @@ async def get_analytics_data():
         trend_labels.append(f"{h:02d}:00")
         trend_values.append(hourly_counts[h])
 
+    
+    # Calculate additional metrics
+    peak_hour = max(hourly_counts.items(), key=lambda x: x[1])[0] if any(hourly_counts.values()) else 0
+    total_detections_today = sum(hourly_counts.values())
+    
+    # File statistics
+    public_files = len(list(public_path.glob("*.mp4"))) + len(list(public_path.glob("*.avi")))
+    evidence_files = len(list(evidence_path.rglob("*.enc")))
+    
+    # Average file sizes
+    avg_public_size = (storage_data["public"] / public_files) if public_files > 0 else 0
+    avg_evidence_size = (storage_data["evidence"] / evidence_files) if evidence_files > 0 else 0
+    
+    # Storage efficiency (compression ratio)
+    compression_ratio = (storage_data["evidence"] / storage_data["public"]) if storage_data["public"] > 0 else 1.0
+    
     return {
         "storage": {
             "total_mb": round(current_total_mb, 2),
@@ -336,23 +381,33 @@ async def get_analytics_data():
             "public_mb": round(storage_data["public"], 2),
             "evidence_mb": round(storage_data["evidence"], 2),
             "by_camera": {k: round(v, 2) for k, v in storage_data["by_camera"].items()},
-            "days_left": days_left
+            "days_left": days_left,
+            "public_files": public_files,
+            "evidence_files": evidence_files,
+            "avg_public_size_mb": round(avg_public_size, 2),
+            "avg_evidence_size_mb": round(avg_evidence_size, 2),
+            "compression_ratio": round(compression_ratio, 2),
+            "recordings_path": str(public_path)
         },
         "trends": {
             "labels": trend_labels,
-            "values": trend_values
+            "values": trend_values,
+            "peak_hour": f"{peak_hour:02d}:00",
+            "total_today": total_detections_today
         },
         "classification": class_distribution,
         "camera_activity": camera_activity,
         "recent_logs": recent_logs,
         "health": {
-            "disk_total_gb": round(disk.total / (1024**3), 2),
-            "disk_free_gb": round(disk.free / (1024**3), 2),
-            "disk_percent": disk.percent,
+            "disk_total_gb": round(recordings_disk.total / (1024**3), 2),
+            "disk_free_gb": round(recordings_disk.free / (1024**3), 2),
+            "disk_percent": recordings_disk.percent,
             "cameras_online": sum(1 for s in system.camera_status.values() if s == "online"),
             "total_cameras": len(system.config.camera_sources),
             "total_detections": total_events,
-            "evidence_files": evidence_count
+            "evidence_files": evidence_count,
+            "all_disks": all_disks,
+            "recordings_drive": str(public_path.drive) if hasattr(public_path, 'drive') else str(public_path)[:2]
         }
     }
 

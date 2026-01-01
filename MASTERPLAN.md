@@ -424,31 +424,31 @@ python tools/decryptor.py decrypt test.enc
 - [x] Gaussian blur implementation
 - [x] Multi-camera support
 
-### Minggu 3-4: Storage & Security ✅ (DONE)
+### Minggu 3: Storage & Security ✅ (DONE)
 - [x] Public MP4 recording
 - [x] AES-256-GCM encryption
 - [x] Evidence manager
 - [x] Background flush queue
 
-### Minggu 5-6: Web Interface ✅ (DONE)
+### Minggu 4: Web Interface ✅ (DONE)
 - [x] FastAPI server
 - [x] Live MJPEG streaming
 - [x] Gallery replay
 - [x] Analytics dashboard
 
-### Minggu 7-8: Optimization ✅ (DONE)
+### Minggu 5: Optimization ✅ (DONE)
 - [x] Selective evidence recording
 - [x] Storage retention policy
 - [x] FIFO cleanup
 - [x] Usage velocity forecast
 
-### Minggu 9-10: Testing & Documentation (CURRENT)
+### Minggu 6-7: Testing & Documentation (CURRENT)
 - [ ] Performance benchmarking
 - [ ] Integrity testing
 - [ ] User acceptance testing
 - [ ] Thesis writing (Bab 4 & 5)
 
-### Minggu 11-12: Final Polish
+### Minggu 8-9: Final Polish
 - [ ] Code cleanup
 - [ ] Documentation
 - [ ] Presentation slides
