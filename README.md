@@ -39,7 +39,7 @@
 ---
 
 ## 🎯 Overview
-**SECURE EDGE** adalah sistem surveilans cerdas berbasis **Edge Computing** yang menggabungkan deteksi objek AI real-time dengan enkripsi tingkat militer. Sistem ini dirancang khusus untuk skenario di mana privasi publik harus dijaga tanpa mengorbankan kebutuhan investigasi forensik.
+**SECURE EDGE** adalah sistem surveilans cerdas berbasis **Edge Computing** yang menggabungkan deteksi objek AI real-time dengan enkripsi. Sistem ini dirancang khusus untuk skenario di mana privasi publik harus dijaga tanpa mengorbankan kebutuhan investigasi forensik.
 
 > [!NOTE]
 > Proyek ini dikembangkan sebagai bagian dari penelitian skripsi sarjana dengan fokus pada **Edge AI** dan **Sistem Keamanan Informasi**.
