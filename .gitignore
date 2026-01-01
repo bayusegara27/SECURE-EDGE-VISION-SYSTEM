@@ -47,6 +47,13 @@ env/
 *.sublime-project
 *.sublime-workspace
 
+# Frontmatter CMS (VS Code extension)
+frontmatter.json
+.frontmatter/
+
+# Wiki (already in wiki/ folder)
+WIKI.md
+
 # ============================================
 # SECURITY - CRITICAL!
 # ============================================
