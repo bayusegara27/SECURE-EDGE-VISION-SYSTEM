@@ -114,9 +114,22 @@ class EdgeVisionSystem:
         if not ret:
             return False
         
+        # Validate frame data (critical for YouTube streams which may return corrupted frames)
+        if frame is None or frame.size == 0:
+            return False
+        
+        # Ensure frame has proper dimensions
+        if len(frame.shape) < 2:
+            return False
+        
         # 1. Smart Resize to 720p (Center-Crop to 16:9 to prevent stretching)
         target_w, target_h = 1280, 720
         h, w = frame.shape[:2]
+        
+        # Validate dimensions are positive
+        if h <= 0 or w <= 0:
+            return False
+        
         target_aspect = target_w / target_h
         current_aspect = w / h
         
@@ -338,6 +351,21 @@ def processing_loop(camera_idx: int):
         except Exception as e:
             logger.error(f"Critical error (Cam {camera_idx}): {e}")
             system.camera_status[camera_idx] = "offline"
+            
+            # Reset camera connection on critical error to prevent memory leak
+            if system.caps.get(camera_idx):
+                try:
+                    system.caps[camera_idx].release()
+                except:
+                    pass
+                system.caps[camera_idx] = None
+            
+            # Invalidate YouTube cache if applicable
+            if isinstance(src, str) and 'youtube' in src.lower():
+                youtube_stream_url = None
+            
             if not system.running:
                 return
-            time.sleep(0.5)
+            
+            # Longer sleep to prevent rapid error loops causing memory leak
+            time.sleep(2.0)
