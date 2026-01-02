@@ -47,6 +47,10 @@ class Config:
         
         # Retention Policy
         self.max_storage_gb = int(os.getenv("MAX_STORAGE_GB", "50"))
+        
+        # Overlay Settings
+        self.show_timestamp = os.getenv("SHOW_TIMESTAMP", "True").lower() == "true"
+        self.show_debug_overlay = os.getenv("SHOW_DEBUG_OVERLAY", "False").lower() == "true"
 
 
 def validate_config() -> Tuple[bool, List[str]]:

@@ -165,12 +165,66 @@ class EdgeVisionSystem:
             self.frame_counts[camera_idx] = 0
             self.fps_starts[camera_idx] = time.time()
         
+        # 5. Apply video overlays (timestamp, debug info)
+        blurred = self._apply_overlays(blurred, camera_idx, len(detections))
+        
         # Update shared frame
         with self.frame_locks[camera_idx]:
             self.latest_frames[camera_idx] = blurred.copy()
             self.latest_detections[camera_idx] = len(detections)
         
         return True
+
+    def _apply_overlays(self, frame: np.ndarray, camera_idx: int, det_count: int) -> np.ndarray:
+        """Draw timestamp and debug info on frame"""
+        show_ts = getattr(self.config, 'show_timestamp', True)
+        show_debug = getattr(self.config, 'show_debug_overlay', False)
+        
+        if not show_ts and not show_debug:
+            return frame
+            
+        h, w = frame.shape[:2]
+        
+        # 1. Draw Timestamp (Top Right)
+        if show_ts:
+            ts_text = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            scale = 0.7
+            thickness = 2
+            
+            size = cv2.getTextSize(ts_text, font, scale, thickness)[0]
+            tx = w - size[0] - 20
+            ty = 30
+            
+            # Text background
+            cv2.rectangle(frame, (tx - 5, ty - 25), (tx + size[0] + 5, ty + 10), (0, 0, 0), -1)
+            cv2.putText(frame, ts_text, (tx, ty), font, scale, (255, 255, 255), thickness, cv2.LINE_AA)
+            
+        # 2. Draw Debug Overlay (Top Left)
+        if show_debug:
+            fps = self.camera_fps.get(camera_idx, 0)
+            status = self.camera_status.get(camera_idx, "offline")
+            
+            debug_lines = [
+                f"CAM {camera_idx}",
+                f"FPS: {fps:.1f}",
+                f"DET: {det_count}",
+                f"STAT: {status.upper()}"
+            ]
+            
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            scale = 0.5
+            thickness = 1
+            
+            cv2.rectangle(frame, (10, 10), (160, 15 + (len(debug_lines) * 20)), (0, 0, 0), -1)
+            
+            status_color = (0, 255, 0) if status == "online" else (0, 0, 255)
+            for i, line in enumerate(debug_lines):
+                color = (255, 255, 255)
+                if "STAT" in line: color = status_color
+                cv2.putText(frame, line, (20, 30 + (i * 20)), font, scale, color, thickness, cv2.LINE_AA)
+                
+        return frame
     
     def get_frame(self, camera_idx: int) -> tuple:
         """Get latest frame for streaming for specific camera"""
