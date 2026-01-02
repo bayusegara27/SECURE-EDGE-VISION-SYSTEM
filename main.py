@@ -86,7 +86,7 @@ from fastapi.staticfiles import StaticFiles
 app = FastAPI(
     title="Secure Edge Vision System",
     description="Real-time video anonymization",
-    version="1.0.0",
+    version="1.4.0",
     lifespan=lifespan
 )
 
