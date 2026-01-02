@@ -1,10 +1,20 @@
 # Application Version
-VERSION = "1.3.0"
-VERSION_NAME = "Analytics & Documentation Update"
-RELEASE_DATE = "2026-01-01"
+VERSION = "1.4.0"
+VERSION_NAME = "Overlay & System Enhancement"
+RELEASE_DATE = "2026-01-02"
 
 # Version History
 CHANGELOG = {
+    "1.4.0": {
+        "date": "2026-01-02",
+        "name": "Overlay & System Enhancement",
+        "features": [
+            "Smart Video Overlays (Timestamp & Debug Info)",
+            "Configurable overlay toggles via .env",
+            "Stability fix for multi-camera stream processing",
+            "YouTube stream support module integration"
+        ]
+    },
     "1.3.0": {
         "date": "2026-01-01",
         "name": "Analytics & System Enhancement",
