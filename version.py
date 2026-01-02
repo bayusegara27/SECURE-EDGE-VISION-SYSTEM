@@ -11,7 +11,12 @@ CHANGELOG = {
         "features": [
             "Smart Video Overlays (Timestamp & Debug Info)",
             "Configurable overlay toggles via .env",
+<<<<<<< HEAD
             "Stability fix for multi-camera stream processing"
+=======
+            "Stability fix for multi-camera stream processing",
+            "YouTube stream support module integration"
+>>>>>>> 97922b7a377a4b82fb6f7a94724844fec86c3bfe
         ]
     },
     "1.3.0": {

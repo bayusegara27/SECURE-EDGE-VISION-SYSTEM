@@ -11,6 +11,10 @@ v1.4.0 (2026-01-02) - Overlay & System Enhancement
 [NEW] Smart Video Overlays (Timestamp & Debug Info)
 [NEW] Configurable overlay toggles via .env
 [FIX] Stability fix for multi-camera stream processing
+<<<<<<< HEAD
+=======
+[IMPROVED] YouTube stream support module integration
+>>>>>>> 97922b7a377a4b82fb6f7a94724844fec86c3bfe
 
 v1.3.0 (2026-01-01) - Analytics & Documentation Update
 -----------------------------------------------------
