@@ -215,14 +215,12 @@
         </header>
 
         <!-- Content -->
-        <div class="content-area">
+            <div class="content-area">
             <!-- Left Panel - File List -->
             <div class="panel-left">
-                <div class="filter-tabs">
+                <div class="filter-tabs" id="filterTabs">
                     <button class="filter-tab active" data-filter="all">All</button>
-                    <button class="filter-tab" data-filter="cam0">CAM 0</button>
-                    <button class="filter-tab" data-filter="cam1">CAM 1</button>
-                    <button class="filter-tab" data-filter="rtsp">RTSP</button>
+                    <!-- Tabs will be dynamically generated -->
                 </div>
                 <div class="panel-content">
                     <div class="file-list" id="fileList">
@@ -273,13 +271,118 @@
         
         let recordings = [];
         let currentFilter = 'all';
+        let cameraSources = []; // Will be populated from API
+
+        // Get camera sources for smart tab naming
+        async function loadCameraSources() {
+            try {
+                const res = await fetch('/api/status');
+                const data = await res.json();
+                cameraSources = data.cameras || [];
+            } catch (e) {
+                console.error('Failed to load camera sources:', e);
+            }
+        }
+
+        // Generate smart tab name based on camera source
+        function getSmartTabName(source, index) {
+            if (typeof source === 'number' || (typeof source === 'string' && /^\d+$/.test(source))) {
+                return `CAM ${index}`;
+            }
+            const srcLower = source.toLowerCase();
+            if (srcLower.includes('youtube.com') || srcLower.includes('youtu.be')) {
+                return `YouTube`;
+            }
+            if (srcLower.startsWith('rtsp://')) {
+                return `RTSP`;
+            }
+            if (srcLower.startsWith('http://') || srcLower.startsWith('https://')) {
+                return `Stream ${index}`;
+            }
+            return `CAM ${index}`;
+        }
+
+        // Generate filter ID for matching recordings
+        function getFilterId(source, index) {
+            if (typeof source === 'number' || (typeof source === 'string' && /^\d+$/.test(source))) {
+                return `cam${index}`;
+            }
+            const srcLower = source.toLowerCase();
+            if (srcLower.includes('youtube.com') || srcLower.includes('youtu.be')) {
+                return `cam${index}`; // YouTube recordings use cam{index} prefix
+            }
+            if (srcLower.startsWith('rtsp://')) {
+                return 'rtsp';
+            }
+            return `cam${index}`;
+        }
+
+        // Build dynamic filter tabs
+        function buildFilterTabs() {
+            const tabsContainer = document.getElementById('filterTabs');
+            
+            // Start with All tab
+            let tabsHtml = '<button class="filter-tab active" data-filter="all">All</button>';
+            
+            // Add tabs for each camera source
+            const addedTabs = new Set();
+            cameraSources.forEach((cam, index) => {
+                const source = cam.source || cam.name || index;
+                const tabName = getSmartTabName(source, index);
+                const filterId = getFilterId(source, index);
+                
+                // Avoid duplicate tabs (e.g., multiple YouTube streams)
+                const tabKey = `${tabName}-${filterId}`;
+                if (!addedTabs.has(tabKey)) {
+                    addedTabs.add(tabKey);
+                    tabsHtml += `<button class="filter-tab" data-filter="${filterId}">${tabName}</button>`;
+                }
+            });
+            
+            // Fallback: If no camera sources, detect from recordings
+            if (cameraSources.length === 0 && recordings.length > 0) {
+                const prefixes = new Set();
+                recordings.forEach(r => {
+                    const match = r.filename.match(/public_(cam\d+|rtsp)/i);
+                    if (match) prefixes.add(match[1].toLowerCase());
+                });
+                
+                prefixes.forEach(prefix => {
+                    let tabName = prefix.toUpperCase();
+                    if (prefix.startsWith('cam')) {
+                        tabName = `CAM ${prefix.replace('cam', '')}`;
+                    }
+                    tabsHtml += `<button class="filter-tab" data-filter="${prefix}">${tabName}</button>`;
+                });
+            }
+            
+            tabsContainer.innerHTML = tabsHtml;
+            
+            // Re-attach click handlers
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.onclick = () => {
+                    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    currentFilter = tab.dataset.filter;
+                    renderList();
+                };
+            });
+            
+            lucide.createIcons();
+        }
 
         // Load recordings
         async function loadRecordings() {
+            // First load camera sources for smart naming
+            await loadCameraSources();
+            
             try {
                 const res = await fetch('/api/recordings');
                 const data = await res.json();
                 recordings = data.recordings || [];
+                
+                // Build tabs after we have both camera sources and recordings
+                buildFilterTabs();
                 renderList();
             } catch (e) {
                 console.error('Failed to load:', e);
