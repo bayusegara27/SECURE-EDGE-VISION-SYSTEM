@@ -83,10 +83,21 @@ async def lifespan(app: FastAPI):
 
 from fastapi.staticfiles import StaticFiles
 
+# Handle versioning from VERSION.txt
+def get_app_version():
+    try:
+        with open("VERSION.txt", "r") as f:
+            for line in f:
+                if line.startswith("Version "):
+                    return line.replace("Version ", "").strip()
+    except:
+        pass
+    return "1.4.0"
+
 app = FastAPI(
     title="Secure Edge Vision System",
     description="Real-time video anonymization",
-    version="1.4.0",
+    version=get_app_version(),
     lifespan=lifespan
 )
 
