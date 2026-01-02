@@ -62,6 +62,12 @@ def validate_config() -> Tuple[bool, List[str]]:
     camera = os.getenv("CAMERA_SOURCES", "0")
     if camera.startswith("rtsp://"):
         warnings.append(f"Using RTSP source: {camera[:50]}...")
+    elif any(domain in camera.lower() for domain in ["youtube.com", "youtu.be"]):
+        warnings.append(f"Using YouTube source: {camera[:50]}... (requires yt-dlp)")
+        # Check if yt-dlp is available
+        import shutil
+        if not shutil.which("yt-dlp"):
+            issues.append("yt-dlp is required for YouTube streams. Install with: pip install yt-dlp")
     elif camera.isdigit():
         try:
             import cv2
