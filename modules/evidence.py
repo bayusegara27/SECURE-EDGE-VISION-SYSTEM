@@ -105,7 +105,10 @@ class EvidenceManager:
                 if not self.buffer:
                     self.buffer.extend(self.pre_roll)
                     self.pre_roll = []
-                    self.buffer_start = self.buffer[0]["timestamp"]
+                    # Only set buffer_start from buffer if buffer has items
+                    # (pre_roll might be empty if stream just started)
+                    if self.buffer:
+                        self.buffer_start = self.buffer[0]["timestamp"]
         
         # 3. Standard Buffer Handling
         if self.buffer_start is None:

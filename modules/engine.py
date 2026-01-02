@@ -115,9 +115,22 @@ class EdgeVisionSystem:
         if not ret:
             return False
         
+        # Validate frame data (critical for YouTube streams which may return corrupted frames)
+        if frame is None or frame.size == 0:
+            return False
+        
+        # Ensure frame has proper dimensions
+        if len(frame.shape) < 2:
+            return False
+        
         # 1. Smart Resize to 720p (Center-Crop to 16:9 to prevent stretching)
         target_w, target_h = 1280, 720
         h, w = frame.shape[:2]
+        
+        # Validate dimensions are positive
+        if h <= 0 or w <= 0:
+            return False
+        
         target_aspect = target_w / target_h
         current_aspect = w / h
         
@@ -279,6 +292,11 @@ def processing_loop(camera_idx: int):
     target_fps = system.config.target_fps
     frame_time = 1.0 / target_fps
     
+    # YouTube stream handler cache (to avoid re-extracting URL on every reconnect)
+    youtube_stream_url = None
+    youtube_last_extract = 0
+    youtube_refresh_interval = 3600  # Re-extract URL every hour for live streams
+    
     while system.running:
         try:
             # 1. Check/Open Connection
@@ -286,17 +304,50 @@ def processing_loop(camera_idx: int):
                 system.camera_status[camera_idx] = "connecting"
                 logger.info(f"[Cam {camera_idx}] Attempting to connect to: {src}")
                 
-                # Use CAP_FFMPEG for RTSP, CAP_DSHOW for local webcams on Windows
+                # Determine capture source and backend
+                capture_source = src
                 backend = cv2.CAP_ANY
-                if isinstance(src, str) and src.startswith("rtsp"):
-                    backend = cv2.CAP_FFMPEG
-                    # Force TCP and set short timeout (5 seconds = 5,000,000 microseconds)
-                    os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp|stimeout;5000000"
+                
+                # Handle YouTube URLs
+                if isinstance(src, str):
+                    from modules.youtube import is_youtube_url, extract_stream_url
+                    
+                    if is_youtube_url(src):
+                        current_time = time.time()
+                        
+                        # Extract or use cached YouTube stream URL
+                        if (youtube_stream_url is None or 
+                            current_time - youtube_last_extract > youtube_refresh_interval):
+                            logger.info(f"[Cam {camera_idx}] Extracting YouTube stream URL...")
+                            youtube_stream_url = extract_stream_url(src)
+                            youtube_last_extract = current_time
+                        
+                        if youtube_stream_url:
+                            capture_source = youtube_stream_url
+                            backend = cv2.CAP_FFMPEG
+                            logger.info(f"[Cam {camera_idx}] Using YouTube stream")
+                        else:
+                            logger.error(f"[Cam {camera_idx}] Failed to extract YouTube stream URL")
+                            system.camera_status[camera_idx] = "offline"
+                            # Wait before retry
+                            for _ in range(50):  # 5 seconds total
+                                if not system.running:
+                                    return
+                                time.sleep(0.1)
+                            continue
+                    
+                    # Handle RTSP URLs
+                    elif src.startswith("rtsp"):
+                        backend = cv2.CAP_FFMPEG
+                        # Force TCP and set short timeout (5 seconds = 5,000,000 microseconds)
+                        os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp|stimeout;5000000"
+                
+                # Handle local webcams on Windows
                 elif os.name == 'nt' and isinstance(src, int):
                     backend = cv2.CAP_DSHOW
                 
-                # Use int for local cameras, string for RTSP
-                cap = cv2.VideoCapture(src, backend)
+                # Open video capture
+                cap = cv2.VideoCapture(capture_source, backend)
 
                 if cap.isOpened():
                     cap.set(cv2.CAP_PROP_FPS, target_fps)
@@ -309,6 +360,9 @@ def processing_loop(camera_idx: int):
                 else:
                     logger.warning(f"[Cam {camera_idx}] Connection failed, retrying in 5s...")
                     system.camera_status[camera_idx] = "offline"
+                    # Invalidate YouTube cache on connection failure
+                    if isinstance(src, str) and is_youtube_url(src):
+                        youtube_stream_url = None
                     # Use short sleeps to allow graceful shutdown
                     for _ in range(50):  # 5 seconds total
                         if not system.running:
@@ -352,6 +406,21 @@ def processing_loop(camera_idx: int):
         except Exception as e:
             logger.error(f"Critical error (Cam {camera_idx}): {e}")
             system.camera_status[camera_idx] = "offline"
+            
+            # Reset camera connection on critical error to prevent memory leak
+            if system.caps.get(camera_idx):
+                try:
+                    system.caps[camera_idx].release()
+                except:
+                    pass
+                system.caps[camera_idx] = None
+            
+            # Invalidate YouTube cache if applicable
+            if isinstance(src, str) and 'youtube' in src.lower():
+                youtube_stream_url = None
+            
             if not system.running:
                 return
-            time.sleep(0.5)
+            
+            # Longer sleep to prevent rapid error loops causing memory leak
+            time.sleep(2.0)
