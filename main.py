@@ -92,7 +92,7 @@ def get_app_version():
                     return line.replace("Version ", "").strip()
     except:
         pass
-    return "1.4.0"
+    return "1.0.0"
 
 app = FastAPI(
     title="Secure Edge Vision System",
