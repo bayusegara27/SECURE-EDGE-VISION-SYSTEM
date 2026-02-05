@@ -170,9 +170,9 @@ class EdgeVisionSystem:
             model_path=self.config.model_path,
             device=self.config.device,
             confidence=self.config.confidence,
-            iou=getattr(self.config, 'iou', 0.45),
+            iou=self.config.iou,
             blur_intensity=self.config.blur_intensity,
-            tracker=getattr(self.config, 'tracker', 'botsort')
+            tracker=self.config.tracker
         )
         if not self.processor.load_model():
             raise RuntimeError("Failed to load AI model")

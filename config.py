@@ -164,8 +164,8 @@ def get_preset(preset_id: int, presets: Optional[Dict] = None) -> Dict[str, Any]
     Returns:
         Preset configuration dictionary
         
-    Raises:
-        ValueError: If preset_id is not valid (not 1 or 2)
+    Note:
+        Invalid preset IDs will log a warning and fall back to preset 1.
     """
     if presets is None:
         presets = load_presets()
