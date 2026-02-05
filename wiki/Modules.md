@@ -213,20 +213,20 @@ Public video recorder menggunakan OpenCV VideoWriter.
 ```python
 VideoRecorder(
     output_dir: str,
-    prefix: str = "public",
+    prefix: str = "recording",
     fps: int = 30,
     max_duration: int = 300,
-    resolution: Tuple[int, int] = (1280, 720)
+    resolution: tuple = (1280, 720)
 )
 ```
 
 | Parameter | Type | Default | Description |
 |:----------|:-----|:--------|:------------|
 | `output_dir` | str | - | Output directory path |
-| `prefix` | str | `"public"` | Filename prefix |
+| `prefix` | str | `"recording"` | Filename prefix |
 | `fps` | int | `30` | Frames per second |
 | `max_duration` | int | `300` | Max seconds before rotation |
-| `resolution` | Tuple | `(1280, 720)` | Video resolution |
+| `resolution` | tuple | `(1280, 720)` | Video resolution |
 
 #### Methods
 
@@ -248,9 +248,11 @@ recorder.close()  # Finalize current MP4
 #### File Naming
 
 ```
-{prefix}_{timestamp}_{sequence}.mp4
-Example: public_cam0_20240115143000_0001.mp4
+{prefix}_{timestamp}.mp4
+Example: public_cam0_20240115_143000.mp4
 ```
+
+> **Note**: Timestamp format adalah `YYYYMMDD_HHMMSS`. File bisa berekstensi `.mp4` atau `.avi` tergantung codec yang tersedia.
 
 ---
 

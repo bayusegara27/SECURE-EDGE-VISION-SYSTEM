@@ -442,11 +442,20 @@ python demo.py --quick
 # Generate key
 python tools/key_manager.py --generate
 
+# Generate RSA keys (hybrid encryption)
+python tools/key_manager.py --generate-rsa
+
 # Run benchmark
 python benchmark.py --duration 60
 
-# Decrypt evidence
-python tools/decryptor.py decrypt evidence.enc
+# List evidence files
+python tools/decryptor.py --list
+
+# Decrypt and play evidence
+python tools/decryptor.py --file evidence.enc
+
+# Export decrypted evidence to video
+python tools/decryptor.py --file evidence.enc --export output.mp4
 ```
 
 ### Angka Penting

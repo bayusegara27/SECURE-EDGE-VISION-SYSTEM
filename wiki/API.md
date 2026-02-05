@@ -96,7 +96,7 @@ GET http://localhost:8000/
 
 ## 📹 Streaming Endpoints
 
-### GET `/video_feed/{camera_idx}`
+### GET `/stream/{camera_idx}`
 
 MJPEG live video stream untuk camera tertentu.
 
@@ -112,34 +112,39 @@ MJPEG live video stream untuk camera tertentu.
 
 **Example:**
 ```html
-<img src="/video_feed/0" />
+<img src="/stream/0" />
 ```
 
 **Implementation:**
 ```python
-@app.get("/video_feed/{camera_idx}")
-async def video_feed(camera_idx: int):
-    """MJPEG stream untuk camera tertentu"""
-    system = get_system()
-    
-    def generate():
-        while True:
-            frame, _, _ = system.get_frame(camera_idx)
-            if frame is not None:
-                _, buffer = cv2.imencode('.jpg', frame)
-                yield (
-                    b'--frame\r\n'
-                    b'Content-Type: image/jpeg\r\n\r\n' + 
-                    buffer.tobytes() + 
-                    b'\r\n'
-                )
-            else:
-                time.sleep(0.033)  # ~30 FPS
-    
+@app.get("/stream/{camera_idx}")
+async def video_stream(camera_idx: int):
+    """MJPEG video stream for specific camera"""
     return StreamingResponse(
-        generate(),
+        generate_frames(camera_idx),
         media_type="multipart/x-mixed-replace; boundary=frame"
     )
+```
+
+### GET `/api/status`
+
+Get full system status including all cameras.
+
+**Response:**
+```json
+{
+    "status": "running",
+    "cameras": [
+        {
+            "id": 0,
+            "fps": 28.5,
+            "detections": 2,
+            "source": "0",
+            "state": "online"
+        }
+    ],
+    "timestamp": "2024-01-15T14:30:00"
+}
 ```
 
 ### GET `/api/cameras`
