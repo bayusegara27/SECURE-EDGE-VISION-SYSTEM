@@ -98,6 +98,16 @@ class VideoRecorder:
     """
     
     # ==========================================================================
+    # CLASS CONSTANTS
+    # ==========================================================================
+    
+    # Timeout for queue operations (seconds)
+    QUEUE_TIMEOUT_SECONDS = 0.5
+    
+    # Timeout for waiting on finalization thread during close (seconds)
+    FINALIZE_TIMEOUT_SECONDS = 10.0
+    
+    # ==========================================================================
     # INITIALIZATION
     # ==========================================================================
     
@@ -214,7 +224,7 @@ class VideoRecorder:
         while not self._stop_finalize or not self._finalize_queue.empty():
             try:
                 # Wait for item with timeout to allow checking stop flag
-                item = self._finalize_queue.get(timeout=0.5)
+                item = self._finalize_queue.get(timeout=self.QUEUE_TIMEOUT_SECONDS)
                 
                 # Unpack finalization data
                 writer, filepath, frame_count, events = item
@@ -525,7 +535,7 @@ class VideoRecorder:
         
         # Wait for all finalization to complete (with timeout)
         if self._finalize_thread is not None and self._finalize_thread.is_alive():
-            self._finalize_thread.join(timeout=10.0)  # Max 10 second wait
+            self._finalize_thread.join(timeout=self.FINALIZE_TIMEOUT_SECONDS)
             if self._finalize_thread.is_alive():
                 logger.warning(f"[{self.prefix}] Finalize thread still running after timeout")
         

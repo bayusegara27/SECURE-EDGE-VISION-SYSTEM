@@ -110,6 +110,19 @@ class EvidenceManager:
     """
     
     # ==========================================================================
+    # CLASS CONSTANTS
+    # ==========================================================================
+    
+    # Timeout for queue operations (seconds)
+    QUEUE_TIMEOUT_SECONDS = 0.5
+    
+    # Timeout for waiting on encryption thread during close (seconds)
+    ENCRYPT_TIMEOUT_SECONDS = 30.0
+    
+    # Default pre-roll buffer size (frames, ~1 second at 30fps)
+    DEFAULT_PRE_ROLL_SIZE = 30
+    
+    # ==========================================================================
     # INITIALIZATION
     # ==========================================================================
     
@@ -182,7 +195,7 @@ class EvidenceManager:
         # --------------------------------------------------
         self.buffer: List[Dict[str, Any]] = []          # Main frame buffer
         self.pre_roll: List[Dict[str, Any]] = []        # Context buffer
-        self.pre_roll_size = 30                          # ~1 second at 30fps
+        self.pre_roll_size = self.DEFAULT_PRE_ROLL_SIZE  # ~1 second at 30fps
         
         # --------------------------------------------------
         # Buffer State
@@ -266,7 +279,7 @@ class EvidenceManager:
         while not self._stop_worker or not self._encrypt_queue.empty():
             try:
                 # Wait for encryption job with timeout
-                job = self._encrypt_queue.get(timeout=0.5)
+                job = self._encrypt_queue.get(timeout=self.QUEUE_TIMEOUT_SECONDS)
                 
                 # Unpack job data
                 buffer_copy, metadata, filepath = job
@@ -540,7 +553,7 @@ class EvidenceManager:
         
         # Wait for all encryption to complete
         if self._encrypt_thread is not None and self._encrypt_thread.is_alive():
-            self._encrypt_thread.join(timeout=30.0)  # Max 30 second wait
+            self._encrypt_thread.join(timeout=self.ENCRYPT_TIMEOUT_SECONDS)
             if self._encrypt_thread.is_alive():
                 logger.warning(f"[{self.prefix}] Encrypt thread still running after timeout")
         
