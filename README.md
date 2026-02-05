@@ -178,6 +178,42 @@ Akses dashboard melalui: `http://localhost:8000`
 
 ---
 
+## 🎛️ Detection Presets
+
+Sistem mendukung **2 preset deteksi** yang dapat dipilih tanpa mengubah kode:
+
+### Preset 1 (Default)
+- **Detector**: YOLOv8-Face (nano)
+- **Tracker**: BoT-SORT
+- **Confidence**: 0.35
+- **IoU**: 0.45
+
+### Preset 2 (Alternative/Experimental)
+- **Detector**: YOLOv11-Face (nano)
+- **Tracker**: ByteTrack
+- **Confidence**: 0.30
+- **IoU**: 0.50
+
+### Usage Examples
+
+```bash
+# Use default preset (Preset 1)
+python main.py
+
+# Use Preset 2 via CLI argument
+python main.py --preset 2
+
+# Use Preset 2 via environment variable
+DETECTION_PRESET=2 python main.py
+
+# Combine with other arguments
+python main.py --preset 2 --device cuda --port 8080
+```
+
+Preset configuration is stored in `presets.yaml` and can be customized as needed.
+
+---
+
 ## ⚙️ Configuration
 
 Sistem dikonfigurasi melalui file `.env`. Berikut adalah parameter kritikal:

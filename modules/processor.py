@@ -111,7 +111,9 @@ class FrameProcessor:
         model_path: str = "models/model.pt",
         device: str = "cuda",
         confidence: float = 0.5,
+        iou: float = 0.45,
         blur_intensity: int = 51,
+        tracker: str = "botsort",
         use_face_detection: bool = True  # Kept for compatibility
     ):
         # Get absolute path relative to this file's directory
@@ -137,7 +139,9 @@ class FrameProcessor:
         
         self.device = device
         self.confidence = confidence
+        self.iou = iou
         self.blur_intensity = blur_intensity if blur_intensity % 2 == 1 else blur_intensity + 1
+        self.tracker = tracker
         
         self.model = None
         self._is_loaded = False
@@ -167,6 +171,7 @@ class FrameProcessor:
             # Load model
             self.model = YOLO(self.model_path)
             logger.info(f"Loaded: {self.model_path} ({'Face' if self.is_face_model else 'Person'} model)")
+            logger.info(f"Detection config: conf={self.confidence}, iou={self.iou}, tracker={self.tracker}")
             
             # Warm up
             dummy = np.zeros((480, 480, 3), dtype=np.uint8)
@@ -186,11 +191,12 @@ class FrameProcessor:
         now = time.time()
         
         try:
-            # Run detection
+            # Run detection with confidence and IoU thresholds
             results = self.model.predict(
                 frame,
                 device=self.device,
                 conf=self.confidence,
+                iou=self.iou,
                 verbose=False,
                 imgsz=640  # Good balance of speed/accuracy
             )
@@ -287,6 +293,9 @@ class FrameProcessor:
             "model": self.model_path,
             "is_face_model": self.is_face_model,
             "device": self.device,
+            "confidence": self.confidence,
+            "iou": self.iou,
             "blur_intensity": self.blur_intensity,
+            "tracker": self.tracker,
             "is_loaded": self._is_loaded
         }

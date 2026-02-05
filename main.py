@@ -760,13 +760,30 @@ def main():
     
     parser = argparse.ArgumentParser(
         description="Secure Edge Vision System - Real-time Video Anonymization",
-        formatter_class=argparse.RawDescriptionHelpFormatter
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Detection Presets:
+  --preset 1    Default: YOLOv8-Face + BoT-SORT (conf=0.35, iou=0.45)
+  --preset 2    Alternative: YOLOv11-Face + ByteTrack (conf=0.30, iou=0.50)
+
+Examples:
+  python main.py --preset 2
+  DETECTION_PRESET=2 python main.py
+  python main.py --preset 1 --device cuda --port 8080
+        """
     )
     
     parser.add_argument("--port", "-p", type=int, default=None, help="Web server port")
     parser.add_argument("--host", type=str, default=None, help="Web server host")
     parser.add_argument("--camera", "-c", type=str, default=None, help="Camera source")
     parser.add_argument("--device", "-d", type=str, choices=["cuda", "cpu"], default=None, help="Device")
+    parser.add_argument(
+        "--preset", 
+        type=int, 
+        choices=[1, 2], 
+        default=None, 
+        help="Detection preset (1=YOLOv8-Face+BoT-SORT, 2=YOLOv11-Face+ByteTrack)"
+    )
     
     args = parser.parse_args()
     
@@ -777,12 +794,19 @@ def main():
     if args.camera: os.environ["CAMERA_SOURCES"] = args.camera
     if args.device: os.environ["DEVICE"] = args.device
     
+    # Handle preset via CLI argument (takes priority over env var)
+    if args.preset is not None:
+        os.environ["DETECTION_PRESET"] = str(args.preset)
+    
     config = Config()
     
     print("\n" + "=" * 60)
     print("  SECURE EDGE VISION SYSTEM")
     print("=" * 60)
-    print(f"\n  Cameras: {config.camera_sources}")
+    print(f"\n  Preset: {config.preset_name}")
+    print(f"  Detector: {config.detector}")
+    print(f"  Tracker: {config.tracker}")
+    print(f"  Cameras: {config.camera_sources}")
     print(f"  Device: {config.device}")
     print(f"  Dashboard: http://localhost:{config.server_port}")
     print("\n  Press Ctrl+C to stop\n")
