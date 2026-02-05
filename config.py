@@ -274,7 +274,22 @@ class Config:
         # Detection Settings (from preset, with env var override)
         # ====================================================================
         self.device = os.getenv("DEVICE", "cuda")
-        self.model_path = os.getenv("MODEL_PATH", "models/model.pt")  # Face detection model
+        
+        # Map detector name to model file path
+        # If detector is specified in preset, use corresponding model
+        detector_model_map = {
+            "yolov8n-face": "models/model.pt",          # YOLOv8-Face (custom trained - WIDER Face)
+            "yolov11n-face": "models/yolov11n-face.pt", # YOLOv11-Face (YapaLab - WIDER Face)
+            "yolov8n": "yolov8n.pt",                    # YOLOv8 nano COCO (auto-download)
+            "yolov11n": "yolo11n.pt"                    # YOLOv11 nano COCO (auto-download)
+        }
+        
+        # Determine model path based on detector from preset
+        default_model = detector_model_map.get(self.detector, "models/model.pt")
+        self.model_path = os.getenv("MODEL_PATH", default_model)
+        
+        # Log which model will be used
+        logger.info(f"  Model Path: {self.model_path}")
         
         # Use preset values as defaults, allow env var override
         self.confidence = float(os.getenv("DETECTION_CONFIDENCE", str(preset.get("confidence", 0.35))))
