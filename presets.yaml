@@ -1,0 +1,49 @@
+# ================================================================================
+# Detection Presets Configuration
+# ================================================================================
+# This file defines detection presets for the Secure Edge Vision System.
+# 
+# Each preset configures:
+#   - detector: The detection model to use
+#   - tracker: The tracking algorithm
+#   - confidence: Minimum detection confidence threshold (0.0-1.0)
+#   - iou: Intersection over Union threshold for NMS/tracking (0.0-1.0)
+#
+# Usage:
+#   1. CLI: python main.py --preset 2
+#   2. Environment variable: DETECTION_PRESET=2 python main.py
+#   3. Default (no argument): Uses Preset 1
+#
+# Available Presets:
+#   - Preset 1 (Default): YOLOv8-Face with BoT-SORT tracker
+#   - Preset 2 (Alternative): YOLOv11-Face with ByteTrack tracker
+# ================================================================================
+
+presets:
+  # ============================================================================
+  # Preset 1: Default Configuration (Recommended)
+  # ============================================================================
+  # Best for general surveillance with balanced accuracy and speed.
+  # Uses YOLOv8-Face model trained on WIDER Face dataset.
+  # BoT-SORT tracker provides robust multi-object tracking.
+  1:
+    name: "Default (YOLOv8-Face + BoT-SORT)"
+    description: "Balanced preset for general surveillance use"
+    detector: "yolov8n-face"      # YOLOv8-Face nano model
+    tracker: "botsort"            # BoT-SORT tracker
+    confidence: 0.35              # Detection confidence threshold
+    iou: 0.45                     # IoU threshold for NMS/tracking
+
+  # ============================================================================
+  # Preset 2: Alternative / Experimental Configuration
+  # ============================================================================
+  # Experimental preset with different detector and tracker combination.
+  # YOLOv11-Face offers newer architecture with potential improvements.
+  # ByteTrack provides efficient online multi-object tracking.
+  2:
+    name: "Alternative (YOLOv11-Face + ByteTrack)"
+    description: "Experimental preset with newer detector and faster tracker"
+    detector: "yolov11n-face"     # YOLOv11-Face nano model (alternative)
+    tracker: "bytetrack"          # ByteTrack tracker
+    confidence: 0.30              # Lower confidence for more detections
+    iou: 0.50                     # Higher IoU threshold

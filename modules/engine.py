@@ -160,12 +160,19 @@ class EdgeVisionSystem:
         logger.info("Starting Secure Edge Vision System (Multi-Camera)")
         logger.info("=" * 60)
         
-        # Initialize shared processor
+        # Log active preset information
+        logger.info(f"Active Preset: {self.config.preset_name}")
+        logger.info(f"Detector: {self.config.detector}")
+        logger.info(f"Tracker: {self.config.tracker}")
+        
+        # Initialize shared processor with preset configuration
         self.processor = FrameProcessor(
             model_path=self.config.model_path,
             device=self.config.device,
             confidence=self.config.confidence,
-            blur_intensity=self.config.blur_intensity
+            iou=self.config.iou,
+            blur_intensity=self.config.blur_intensity,
+            tracker=self.config.tracker
         )
         if not self.processor.load_model():
             raise RuntimeError("Failed to load AI model")

@@ -6,9 +6,10 @@ Central configuration management for the Secure Edge Vision System.
 
 This module provides:
 1. Config class - Loads and validates all system settings from environment
-2. validate_config() - Checks configuration validity
-3. show_system_info() - Displays system information (Python, CUDA, etc.)
-4. generate_env_template() - Creates default .env template
+2. load_preset() - Loads detection presets from presets.yaml
+3. validate_config() - Checks configuration validity
+4. show_system_info() - Displays system information (Python, CUDA, etc.)
+5. generate_env_template() - Creates default .env template
 
 Environment Variables:
     CAMERA_SOURCES         - Camera sources (comma-separated: "0", "0,1", "rtsp://...")
@@ -28,18 +29,35 @@ Environment Variables:
     MAX_STORAGE_GB         - Maximum storage limit in gigabytes
     SHOW_TIMESTAMP         - Show timestamp overlay on stream
     SHOW_DEBUG_OVERLAY     - Show debug info overlay on stream
+    DETECTION_PRESET       - Detection preset (1 or 2, default: 1)
+
+Presets:
+    Preset 1 (Default):
+        - Detector: YOLOv8-Face (nano)
+        - Tracker: BoT-SORT
+        - conf=0.35, iou=0.45
+    
+    Preset 2 (Alternative):
+        - Detector: YOLOv11-Face (nano)
+        - Tracker: ByteTrack
+        - conf=0.30, iou=0.50
 
 Usage:
     from config import Config
     config = Config()
     print(f"Using device: {config.device}")
     print(f"Camera sources: {config.camera_sources}")
+    print(f"Active preset: {config.preset_name}")
 
 CLI Usage:
     python config.py --validate    # Validate configuration
     python config.py --info        # Show system information
     python config.py --create-env  # Create default .env file
     python config.py --template    # Print .env template
+    
+    # Preset selection:
+    python main.py --preset 2
+    DETECTION_PRESET=2 python main.py
 
 Author: SECURE EDGE VISION SYSTEM
 License: MIT
@@ -48,13 +66,115 @@ License: MIT
 
 import os
 import sys
+import logging
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional, Any
 
 from dotenv import load_dotenv
 
 # Load .env file if present
 load_dotenv()
+
+# Configure logging
+logger = logging.getLogger(__name__)
+
+
+# ================================================================================
+# Preset Management
+# ================================================================================
+
+def load_presets(preset_file: str = "presets.yaml") -> Dict[int, Dict[str, Any]]:
+    """
+    Load detection presets from YAML configuration file.
+    
+    Args:
+        preset_file: Path to presets.yaml file (relative or absolute)
+        
+    Returns:
+        Dictionary mapping preset IDs to their configurations
+        
+    Example:
+        >>> presets = load_presets()
+        >>> print(presets[1]["name"])
+        "Default (YOLOv8-Face + BoT-SORT)"
+    """
+    try:
+        import yaml
+    except ImportError:
+        logger.warning("PyYAML not installed. Using default preset configuration.")
+        return _get_default_presets()
+    
+    # Try multiple paths to find presets.yaml
+    base_dir = Path(__file__).parent
+    possible_paths = [
+        Path(preset_file),  # As provided
+        base_dir / preset_file,  # Relative to config.py
+        base_dir / "presets.yaml",  # Default name in same directory
+    ]
+    
+    for path in possible_paths:
+        if path.exists():
+            try:
+                with open(path, 'r', encoding='utf-8') as f:
+                    data = yaml.safe_load(f)
+                    if data and "presets" in data:
+                        logger.info(f"Loaded presets from: {path}")
+                        return data["presets"]
+            except Exception as e:
+                logger.warning(f"Failed to parse {path}: {e}")
+    
+    logger.warning(f"Presets file not found, using defaults")
+    return _get_default_presets()
+
+
+def _get_default_presets() -> Dict[int, Dict[str, Any]]:
+    """
+    Return hardcoded default presets as fallback.
+    
+    These match the presets.yaml configuration exactly.
+    """
+    return {
+        1: {
+            "name": "Default (YOLOv8-Face + BoT-SORT)",
+            "description": "Balanced preset for general surveillance use",
+            "detector": "yolov8n-face",
+            "tracker": "botsort",
+            "confidence": 0.35,
+            "iou": 0.45
+        },
+        2: {
+            "name": "Alternative (YOLOv11-Face + ByteTrack)",
+            "description": "Experimental preset with newer detector and faster tracker",
+            "detector": "yolov11n-face",
+            "tracker": "bytetrack",
+            "confidence": 0.30,
+            "iou": 0.50
+        }
+    }
+
+
+def get_preset(preset_id: int, presets: Optional[Dict] = None) -> Dict[str, Any]:
+    """
+    Get a specific preset by ID with fallback to default.
+    
+    Args:
+        preset_id: Preset number (1 or 2)
+        presets: Optional presets dict. If None, loads from file.
+        
+    Returns:
+        Preset configuration dictionary
+        
+    Note:
+        Invalid preset IDs will log a warning and fall back to preset 1.
+    """
+    if presets is None:
+        presets = load_presets()
+    
+    if preset_id not in presets:
+        logger.warning(f"Invalid preset {preset_id}, falling back to preset 1")
+        preset_id = 1
+    
+    return presets[preset_id]
 
 
 class Config:
@@ -63,12 +183,14 @@ class Config:
     
     This class centralizes all configuration settings for the system.
     Settings are loaded from environment variables with sensible defaults.
+    Supports detection presets via --preset CLI argument or DETECTION_PRESET env var.
     
     Attributes:
         camera_sources (List[int|str]): List of camera sources
         device (str): Compute device - "cuda" or "cpu"
         model_path (str): Path to YOLOv8 model file
         confidence (float): Detection confidence threshold (0.0-1.0)
+        iou (float): IoU threshold for NMS/tracking (0.0-1.0)
         blur_intensity (int): Gaussian blur kernel size (must be odd)
         server_host (str): FastAPI server host address
         server_port (int): FastAPI server port
@@ -82,16 +204,63 @@ class Config:
         max_storage_gb (int): Maximum storage limit
         show_timestamp (bool): Show timestamp on video stream
         show_debug_overlay (bool): Show debug info on video stream
+        preset_id (int): Active preset ID (1 or 2)
+        preset_name (str): Human-readable name of active preset
+        detector (str): Detector model name from preset
+        tracker (str): Tracker algorithm name from preset
     
     Example:
         >>> config = Config()
         >>> print(f"Device: {config.device}")
         >>> print(f"Cameras: {config.camera_sources}")
-        >>> print(f"Target FPS: {config.target_fps}")
+        >>> print(f"Preset: {config.preset_name}")
+        >>> print(f"Detector: {config.detector}")
     """
     
-    def __init__(self):
-        # Support multiple camera sources separated by comma
+    def __init__(self, preset_id: Optional[int] = None):
+        """
+        Initialize configuration with optional preset override.
+        
+        Args:
+            preset_id: Override preset ID. If None, reads from DETECTION_PRESET env var
+                       or defaults to 1.
+        """
+        # ====================================================================
+        # Preset Loading (Priority: CLI arg > env var > default)
+        # ====================================================================
+        if preset_id is None:
+            preset_id = int(os.getenv("DETECTION_PRESET", "1"))
+        
+        # Validate preset ID
+        if preset_id not in (1, 2):
+            logger.warning(f"Invalid preset {preset_id}, using preset 1")
+            preset_id = 1
+        
+        self.preset_id = preset_id
+        
+        # Load preset configuration
+        presets = load_presets()
+        preset = get_preset(preset_id, presets)
+        
+        # Store preset attributes
+        self.preset_name = preset.get("name", f"Preset {preset_id}")
+        self.detector = preset.get("detector", "yolov8n-face")
+        self.tracker = preset.get("tracker", "botsort")
+        
+        # Log preset loading
+        logger.info("=" * 60)
+        logger.info(f"LOADING DETECTION PRESET {preset_id}")
+        logger.info("=" * 60)
+        logger.info(f"  Name: {self.preset_name}")
+        logger.info(f"  Detector: {self.detector}")
+        logger.info(f"  Tracker: {self.tracker}")
+        logger.info(f"  Confidence: {preset.get('confidence', 0.35)}")
+        logger.info(f"  IoU: {preset.get('iou', 0.45)}")
+        logger.info("=" * 60)
+        
+        # ====================================================================
+        # Camera Sources
+        # ====================================================================
         sources_str = os.getenv("CAMERA_SOURCES", "0")
         self.camera_sources = []
         for src in sources_str.split(","):
@@ -101,31 +270,68 @@ class Config:
             else:
                 self.camera_sources.append(src)
         
+        # ====================================================================
+        # Detection Settings (from preset, with env var override)
+        # ====================================================================
         self.device = os.getenv("DEVICE", "cuda")
         self.model_path = os.getenv("MODEL_PATH", "models/model.pt")  # Face detection model
-        self.confidence = float(os.getenv("DETECTION_CONFIDENCE", "0.5"))
+        
+        # Use preset values as defaults, allow env var override
+        self.confidence = float(os.getenv("DETECTION_CONFIDENCE", str(preset.get("confidence", 0.35))))
+        self.iou = float(os.getenv("DETECTION_IOU", str(preset.get("iou", 0.45))))
         self.blur_intensity = int(os.getenv("BLUR_INTENSITY", "51"))
         
+        # ====================================================================
+        # Server Settings
+        # ====================================================================
         self.server_host = os.getenv("SERVER_HOST", "0.0.0.0")
         self.server_port = int(os.getenv("SERVER_PORT", "8000"))
         
+        # ====================================================================
+        # Storage Paths
+        # ====================================================================
         self.public_path = os.getenv("PUBLIC_RECORDINGS_PATH", "recordings/public")
         self.evidence_path = os.getenv("EVIDENCE_RECORDINGS_PATH", "recordings/evidence")
         self.key_path = os.getenv("ENCRYPTION_KEY_PATH", "keys/master.key")
         
+        # ====================================================================
+        # Recording Settings
+        # ====================================================================
         self.target_fps = int(os.getenv("TARGET_FPS", "30"))
         self.max_duration = int(os.getenv("RECORDING_DURATION_SECONDS", "300"))
         
+        # ====================================================================
         # Storage Optimization
+        # ====================================================================
         self.evidence_detection_only = os.getenv("EVIDENCE_DETECTION_ONLY", "True").lower() == "true"
         self.evidence_quality = int(os.getenv("EVIDENCE_JPEG_QUALITY", "75"))
         
+        # ====================================================================
         # Retention Policy
+        # ====================================================================
         self.max_storage_gb = int(os.getenv("MAX_STORAGE_GB", "50"))
         
+        # ====================================================================
         # Overlay Settings
+        # ====================================================================
         self.show_timestamp = os.getenv("SHOW_TIMESTAMP", "True").lower() == "true"
         self.show_debug_overlay = os.getenv("SHOW_DEBUG_OVERLAY", "False").lower() == "true"
+    
+    def get_preset_info(self) -> Dict[str, Any]:
+        """
+        Get information about the currently loaded preset.
+        
+        Returns:
+            Dictionary with preset details
+        """
+        return {
+            "preset_id": self.preset_id,
+            "preset_name": self.preset_name,
+            "detector": self.detector,
+            "tracker": self.tracker,
+            "confidence": self.confidence,
+            "iou": self.iou
+        }
 
 
 def validate_config() -> Tuple[bool, List[str]]:

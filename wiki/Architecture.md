@@ -218,10 +218,18 @@ cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Minimize latency
 ### 2. Processing Layer
 
 #### FrameProcessor (`modules/processor.py`)
-- **Model**: YOLOv8-Face (trained on WIDER Face dataset)
+- **Model**: YOLOv8-Face atau YOLOv11-Face (configurable via presets)
+- **Tracker**: BoT-SORT atau ByteTrack (configurable via presets)
 - **Inference Size**: 640x640 pixels
 - **Device**: CUDA (fallback ke CPU jika tidak tersedia)
-- **Confidence Threshold**: 0.5 (adjustable)
+- **Confidence Threshold**: 0.35 (Preset 1) atau 0.30 (Preset 2)
+- **IoU Threshold**: 0.45 (Preset 1) atau 0.50 (Preset 2)
+
+#### Detection Presets
+| Preset | Detector | Tracker | Confidence | IoU |
+|:-------|:---------|:--------|:-----------|:----|
+| **1** (Default) | YOLOv8-Face | BoT-SORT | 0.35 | 0.45 |
+| **2** (Alternative) | YOLOv11-Face | ByteTrack | 0.30 | 0.50 |
 
 #### Detection Pipeline
 ```
@@ -522,7 +530,8 @@ sequenceDiagram
 | Evidence Recording | `modules/evidence.py` | `EvidenceManager.add_frame()` |
 | Encryption | `modules/security.py` | `SecureVault.lock_evidence()` |
 | Web Server | `main.py` | FastAPI routes |
-| Configuration | `config.py` | `Config` class |
+| Configuration | `config.py` | `Config` class, preset loading |
+| Presets | `presets.yaml` | Detection configuration presets |
 
 ---
 
