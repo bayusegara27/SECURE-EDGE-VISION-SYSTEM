@@ -1,7 +1,60 @@
 """
+================================================================================
 Security Module
-AES-256-GCM encryption with SHA-256 integrity verification
-Ensures forensic evidence cannot be tampered with
+================================================================================
+AES-256-GCM encryption with SHA-256 integrity verification for forensic evidence.
+
+This module provides cryptographic security for video evidence:
+1. SecureVault - Symmetric AES-256-GCM encryption
+2. HybridVault - RSA+AES hybrid encryption (RSA encrypts per-file AES key)
+3. EvidenceManager - High-level evidence buffer management (deprecated, use modules/evidence.py)
+
+Security Features:
+    - AES-256-GCM: Military-grade authenticated encryption
+    - SHA-256: Integrity hash embedded in payload for tamper detection
+    - PBKDF2: Password-based key derivation with 480k iterations
+    - Random Nonce: 96-bit unique nonce per encryption operation
+    - RSA-2048: Optional hybrid encryption for key management
+
+Encryption Flow:
+    1. Compute SHA-256 hash of original data
+    2. Combine: hash + "::" + data
+    3. Generate random 96-bit nonce
+    4. Encrypt with AES-256-GCM
+    5. Save: nonce + timestamp + metadata_len + metadata + ciphertext
+
+Decryption Flow:
+    1. Read file header (nonce, timestamp, metadata)
+    2. Decrypt with AES-256-GCM
+    3. Split payload at "::" separator
+    4. Verify SHA-256 hash matches
+    5. Return original data if verified
+
+File Format (.enc):
+    +--------+------------+----------+----------+------------+
+    | Nonce  | Timestamp  | Meta Len | Metadata | Ciphertext |
+    | 12 B   | 8 B        | 4 B      | N B      | Rest       |
+    +--------+------------+----------+----------+------------+
+
+Hybrid File Format:
+    +--------+-------------+-------+------------+----------+----------+------------+
+    | Magic  | RSA Key     | Nonce | Timestamp  | Meta Len | Metadata | Ciphertext |
+    | 8 B    | 256 B       | 12 B  | 8 B        | 4 B      | N B      | Rest       |
+    +--------+-------------+-------+------------+----------+----------+------------+
+
+Usage:
+    # Symmetric encryption
+    vault = SecureVault(key_path="keys/master.key")
+    vault.save_encrypted_file(data, "evidence.enc", {"camera": "cam0"})
+    data, metadata = vault.load_encrypted_file("evidence.enc")
+    
+    # Hybrid encryption
+    hvault = HybridVault(public_key_path="keys/rsa_public.pem")
+    hvault.save_encrypted_file(data, "evidence.enc")
+
+Author: SECURE EDGE VISION SYSTEM
+License: MIT
+================================================================================
 """
 
 import hashlib
@@ -9,7 +62,7 @@ import os
 import base64
 import logging
 from pathlib import Path
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Dict, Any
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -18,6 +71,7 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
 
+# Configure module logger
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 

@@ -61,6 +61,7 @@ WIKI.md
 keys/master.key
 keys/backups/
 keys/exports/
+keys/*.pem
 
 # Environment file with secrets
 .env
@@ -72,6 +73,7 @@ recordings/public/*.mp4
 recordings/evidence/*.enc
 recordings/**/*.mp4
 recordings/**/*.enc
+recordings/**/*.csv
 
 # ============================================
 # AI Models (large files)
@@ -106,6 +108,12 @@ htmlcov/
 ehthumbs.db
 Thumbs.db
 desktop.ini
+
+# ============================================
+# Binary Files & Libraries
+# ============================================
+*.dll
+*.dylib
 
 # ============================================
 # Temporary Files

@@ -130,16 +130,21 @@ graph TD
 
 ## 📚 Wiki Documentation
 
-Dokumentasi teknis yang mendalam tersedia di Wiki Forgejo:
-👉 **[SECURE EDGE VISION SYSTEM WIKI](http://192.168.0.135:3000/nakumi/SECURE-EDGE-VISION-SYSTEM/wiki)**
+Dokumentasi teknis yang mendalam tersedia di folder `wiki/`:
+
+📂 **[Lihat Wiki Documentation](wiki/Home.md)**
 
 | Page | Description |
 | :--- | :--- |
-| **Architecture** | Detail teknis komponen dan alur thread. |
-| **Security** | Spesifikasi kriptografi dan verifikasi integritas. |
-| **Dual Path** | Penjelasan mekanisme privasi vs forensik. |
-| **Quick Start** | Panduan instalasi dan deployment cepat. |
-| **FAQ** | Kumpulan pertanyaan sidang skripsi. |
+| **[Home](wiki/Home.md)** | Overview dan daftar isi wiki |
+| **[Architecture](wiki/Architecture.md)** | Detail teknis komponen dan alur thread |
+| **[Security](wiki/Security.md)** | Spesifikasi kriptografi dan verifikasi integritas |
+| **[Dual Path](wiki/DualPath.md)** | Penjelasan mekanisme privasi vs forensik |
+| **[Installation](wiki/Installation.md)** | Panduan instalasi dan konfigurasi |
+| **[Modules](wiki/Modules.md)** | Dokumentasi modul-modul Python |
+| **[API](wiki/API.md)** | Dokumentasi endpoint API |
+| **[Performance](wiki/Performance.md)** | Metrik performa dan benchmark |
+| **[FAQ](wiki/FAQ.md)** | Kumpulan pertanyaan untuk sidang skripsi |
 
 ---
 
