@@ -131,15 +131,44 @@ If automatic installation fails:
 
 ### Option 3: Suppress Warnings (Already Applied)
 
-The system has been updated to suppress OpenH264 warnings in `modules/recorder.py`:
+The system has been updated to completely suppress OpenH264 warnings:
 
-```python
-# Suppress OpenH264 warnings (system falls back to avc1 automatically)
-os.environ.setdefault('OPENCV_FFMPEG_CAPTURE_OPTIONS', 'rtsp_transport;tcp')
-os.environ.setdefault('OPENCV_VIDEOIO_PRIORITY_FFMPEG', '0')
-```
+**In `modules/recorder.py`:**
 
-This doesn't fix the underlying issue but makes the console output cleaner.
+1. **Set OpenCV log level to silent:**
+
+   ```python
+   import cv2
+   if hasattr(cv2, 'setLogLevel'):
+       cv2.setLogLevel(0)  # Disable all OpenCV internal warnings
+   ```
+
+2. **Suppress stderr output during VideoWriter creation:**
+
+   ```python
+   class SuppressStderr:
+       """Temporarily redirects stderr to null to suppress codec warnings"""
+       def __enter__(self):
+           self._original_stderr = sys.stderr
+           sys.stderr = open(os.devnull, 'w')
+           return self
+
+       def __exit__(self, exc_type, exc_val, exc_tb):
+           sys.stderr.close()
+           sys.stderr = self._original_stderr
+
+   # Usage:
+   with SuppressStderr():
+       self.writer = cv2.VideoWriter(out_file, fourcc, self.fps, (w, h))
+   ```
+
+3. **Environment variables:**
+   ```python
+   os.environ.setdefault('OPENCV_FFMPEG_CAPTURE_OPTIONS', 'rtsp_transport;tcp')
+   os.environ.setdefault('OPENCV_VIDEOIO_PRIORITY_FFMPEG', '0')
+   ```
+
+**Result:** Console output is now clean, no OpenH264 error messages, system uses `avc1` codec silently.
 
 ---
 
