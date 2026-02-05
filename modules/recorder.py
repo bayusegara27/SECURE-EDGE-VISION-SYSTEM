@@ -73,17 +73,30 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-# Context manager to suppress stderr output (OpenH264 warnings)
+# Context manager to suppress stderr output at OS level (OpenH264 warnings)
 class SuppressStderr:
-    """Temporarily redirects stderr to null to suppress codec warnings"""
+    """
+    Temporarily redirects stderr to null at OS file descriptor level.
+    This suppresses C/C++ library warnings that bypass Python's stderr.
+    """
     def __enter__(self):
-        self._original_stderr = sys.stderr
-        sys.stderr = open(os.devnull, 'w')
+        # Save original stderr file descriptor
+        self._original_stderr_fd = sys.stderr.fileno()
+        self._saved_stderr_fd = os.dup(self._original_stderr_fd)
+        
+        # Open null device
+        devnull_fd = os.open(os.devnull, os.O_WRONLY)
+        
+        # Redirect stderr to null
+        os.dup2(devnull_fd, self._original_stderr_fd)
+        os.close(devnull_fd)
+        
         return self
     
     def __exit__(self, exc_type, exc_val, exc_tb):
-        sys.stderr.close()
-        sys.stderr = self._original_stderr
+        # Restore original stderr
+        os.dup2(self._saved_stderr_fd, self._original_stderr_fd)
+        os.close(self._saved_stderr_fd)
 
 
 class VideoRecorder:
