@@ -40,6 +40,7 @@ Root tools:
 
 | Tool | Purpose | Common Use |
 |:-----|:--------|:-----------|
+| `main.py` | Run system | `python main.py --preset 2` |
 | `decryptor.py` | Decrypt evidence | `python tools/decryptor.py --list` |
 | `key_manager.py` | Manage keys | `python tools/key_manager.py --generate` |
 | `camera_selector.py` | Test cameras | `python tools/camera_selector.py --test 0` |
@@ -47,6 +48,66 @@ Root tools:
 | `demo.py` | Face detection test | `python demo.py` |
 | `benchmark.py` | Performance test | `python benchmark.py` |
 | `config.py` | Validate config | `python config.py --validate` |
+
+---
+
+## 🚀 main.py
+
+### Purpose
+
+Main application entry point. Runs the FastAPI server with the complete surveillance system.
+
+### Usage
+
+```bash
+# Run with default preset (YOLOv8-Face + BoT-SORT)
+python main.py
+
+# Run with alternative preset (YOLOv11-Face + ByteTrack)
+python main.py --preset 2
+
+# Run with custom port and device
+python main.py --preset 1 --device cuda --port 8080
+
+# Using environment variable
+DETECTION_PRESET=2 python main.py
+```
+
+### Arguments Reference
+
+| Argument | Short | Default | Description |
+|:---------|:------|:--------|:------------|
+| `--preset` | - | `1` | Detection preset (1 or 2) |
+| `--port` | `-p` | `8000` | Web server port |
+| `--host` | - | `0.0.0.0` | Web server host |
+| `--camera` | `-c` | `0` | Camera source |
+| `--device` | `-d` | `cuda` | Device (`cuda` or `cpu`) |
+
+### Detection Presets
+
+| Preset | Detector | Tracker | Confidence | IoU |
+|:-------|:---------|:--------|:-----------|:----|
+| **1** (Default) | YOLOv8-Face | BoT-SORT | 0.35 | 0.45 |
+| **2** (Alternative) | YOLOv11-Face | ByteTrack | 0.30 | 0.50 |
+
+### Example Output
+
+```bash
+python main.py --preset 2
+
+# ============================================================
+#   SECURE EDGE VISION SYSTEM
+# ============================================================
+# 
+#   Preset: Alternative (YOLOv11-Face + ByteTrack)
+#   Detector: yolov11n-face
+#   Tracker: bytetrack
+#   Cameras: [0]
+#   Device: cuda
+#   Dashboard: http://localhost:8000
+# 
+#   Press Ctrl+C to stop
+```
 
 ---
 

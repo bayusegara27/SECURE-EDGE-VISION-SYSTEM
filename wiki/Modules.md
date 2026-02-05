@@ -73,7 +73,9 @@ FrameProcessor(
     model_path: str = "models/model.pt",
     device: str = "cuda",
     confidence: float = 0.5,
+    iou: float = 0.45,
     blur_intensity: int = 51,
+    tracker: str = "botsort",
     use_face_detection: bool = True
 )
 ```
@@ -83,7 +85,9 @@ FrameProcessor(
 | `model_path` | str | `"models/model.pt"` | Path ke YOLOv8 model weights |
 | `device` | str | `"cuda"` | Device untuk inference (`cuda` atau `cpu`) |
 | `confidence` | float | `0.5` | Minimum confidence threshold (0.0-1.0) |
+| `iou` | float | `0.45` | IoU threshold for NMS/tracking (0.0-1.0) |
 | `blur_intensity` | int | `51` | Gaussian blur kernel size (must be odd) |
+| `tracker` | str | `"botsort"` | Tracking algorithm (`botsort` atau `bytetrack`) |
 | `use_face_detection` | bool | `True` | Compatibility flag |
 
 #### Methods
@@ -116,7 +120,10 @@ info = processor.get_info()
 #     "model": "models/model.pt",
 #     "is_face_model": True,
 #     "device": "cuda",
+#     "confidence": 0.35,
+#     "iou": 0.45,
 #     "blur_intensity": 51,
+#     "tracker": "botsort",
 #     "is_loaded": True
 # }
 ```
@@ -505,16 +512,31 @@ Get SHA-256 fingerprint of public key.
 
 ### Class: `Config`
 
-System configuration from environment variables.
+System configuration from environment variables with preset support.
+
+#### Constructor
+
+```python
+Config(preset_id: Optional[int] = None)
+```
+
+| Parameter | Type | Default | Description |
+|:----------|:-----|:--------|:------------|
+| `preset_id` | int | `None` | Override preset ID (1 or 2). If None, reads from `DETECTION_PRESET` env var |
 
 #### Attributes
 
 | Attribute | Type | Default | Description |
 |:----------|:-----|:--------|:------------|
+| `preset_id` | int | `1` | Active preset ID |
+| `preset_name` | str | - | Human-readable preset name |
+| `detector` | str | `"yolov8n-face"` | Detector model from preset |
+| `tracker` | str | `"botsort"` | Tracker algorithm from preset |
 | `camera_sources` | List | `[0]` | Camera sources |
 | `device` | str | `"cuda"` | AI device |
 | `model_path` | str | `"models/model.pt"` | Model path |
-| `confidence` | float | `0.5` | Detection confidence |
+| `confidence` | float | `0.35` | Detection confidence (from preset) |
+| `iou` | float | `0.45` | IoU threshold (from preset) |
 | `blur_intensity` | int | `51` | Blur kernel size |
 | `server_host` | str | `"0.0.0.0"` | Server bind host |
 | `server_port` | int | `8000` | Server port |
@@ -529,7 +551,43 @@ System configuration from environment variables.
 | `show_timestamp` | bool | `True` | Show timestamp overlay |
 | `show_debug_overlay` | bool | `False` | Show debug overlay |
 
-### Functions
+#### Methods
+
+##### `get_preset_info() -> dict`
+Get information about currently loaded preset.
+
+```python
+config = Config(preset_id=1)
+info = config.get_preset_info()
+# Returns: {
+#     "preset_id": 1,
+#     "preset_name": "Default (YOLOv8-Face + BoT-SORT)",
+#     "detector": "yolov8n-face",
+#     "tracker": "botsort",
+#     "confidence": 0.35,
+#     "iou": 0.45
+# }
+```
+
+### Preset Functions
+
+#### `load_presets(preset_file: str = "presets.yaml") -> Dict[int, Dict]`
+Load detection presets from YAML file.
+
+```python
+presets = load_presets()
+# Returns: {1: {...}, 2: {...}}
+```
+
+#### `get_preset(preset_id: int, presets: Optional[Dict] = None) -> Dict`
+Get a specific preset by ID with fallback.
+
+```python
+preset = get_preset(1)
+# Returns: {"name": "...", "detector": "...", "tracker": "...", ...}
+```
+
+### Other Functions
 
 #### `validate_config() -> Tuple[bool, List[str]]`
 Validate system configuration.
@@ -546,18 +604,58 @@ Create default .env file if not exists.
 
 ---
 
+## 📁 presets.yaml
+
+### Structure
+
+Detection presets are defined in `presets.yaml`:
+
+```yaml
+presets:
+  1:
+    name: "Default (YOLOv8-Face + BoT-SORT)"
+    description: "Balanced preset for general surveillance use"
+    detector: "yolov8n-face"
+    tracker: "botsort"
+    confidence: 0.35
+    iou: 0.45
+
+  2:
+    name: "Alternative (YOLOv11-Face + ByteTrack)"
+    description: "Experimental preset with newer detector and faster tracker"
+    detector: "yolov11n-face"
+    tracker: "bytetrack"
+    confidence: 0.30
+    iou: 0.50
+```
+
+### Usage
+
+```bash
+# CLI argument (priority)
+python main.py --preset 2
+
+# Environment variable
+DETECTION_PRESET=2 python main.py
+
+# In .env file
+DETECTION_PRESET=2
+```
+
+---
+
 ## 📊 Module Statistics
 
 | Module | Lines | Classes | Functions | Description |
 |:-------|:------|:--------|:----------|:------------|
-| `processor.py` | ~200 | 1 | 4 | AI detection & blur |
-| `engine.py` | ~370 | 1 | 3 | System orchestrator |
+| `processor.py` | ~210 | 1 | 4 | AI detection & blur |
+| `engine.py` | ~380 | 1 | 3 | System orchestrator |
 | `recorder.py` | ~150 | 1 | 3 | Public recording |
 | `evidence.py` | ~210 | 1 | 6 | Evidence management |
 | `security.py` | ~610 | 4 | 10 | Cryptography |
 | `storage.py` | ~100 | 0 | 4 | Storage utilities |
 | `rsa_crypto.py` | ~150 | 0 | 8 | RSA operations |
-| `config.py` | ~300 | 1 | 5 | Configuration |
+| `config.py` | ~400 | 1 | 8 | Configuration + presets |
 
 ---
 

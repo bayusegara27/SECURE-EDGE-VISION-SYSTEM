@@ -91,8 +91,14 @@ python tools/camera_selector.py --test "rtsp://admin:password@192.168.1.100:554/
 ### Step 5: Start the System
 
 ```bash
-# Start the system
+# Start with default preset (YOLOv8-Face + BoT-SORT)
 python main.py
+
+# Or use alternative preset (YOLOv11-Face + ByteTrack)
+python main.py --preset 2
+
+# Using environment variable
+DETECTION_PRESET=2 python main.py
 ```
 
 ### Step 6: Open Web Dashboard
@@ -120,8 +126,14 @@ Akses dashboard di `http://localhost:8000`:
 ### Starting & Stopping
 
 ```bash
-# Start system
+# Start system with default preset
 python main.py
+
+# Start with alternative preset
+python main.py --preset 2
+
+# Combine preset with other options
+python main.py --preset 2 --device cuda --port 8080
 
 # Stop system
 # Press Ctrl+C in terminal
@@ -167,6 +179,11 @@ Create `.env` file in project root:
 # RTSP: rtsp://user:pass@ip:port/stream
 # Multiple: 0,1,rtsp://...
 CAMERA_SOURCES=0
+
+# === Detection Preset ===
+# Preset 1 (Default): YOLOv8-Face + BoT-SORT (conf=0.35, iou=0.45)
+# Preset 2 (Alternative): YOLOv11-Face + ByteTrack (conf=0.30, iou=0.50)
+DETECTION_PRESET=1
 
 # === AI Settings ===
 DEVICE=cuda
@@ -223,6 +240,32 @@ DETECTION_CONFIDENCE=0.6
 ```env
 EVIDENCE_DETECTION_ONLY=True
 EVIDENCE_JPEG_QUALITY=90
+```
+
+**Alternative Detection Preset:**
+```env
+DETECTION_PRESET=2
+```
+
+### Using Detection Presets
+
+The system supports 2 detection presets for easy configuration switching:
+
+| Preset | Detector | Tracker | Confidence | IoU |
+|:-------|:---------|:--------|:-----------|:----|
+| **1** (Default) | YOLOv8-Face | BoT-SORT | 0.35 | 0.45 |
+| **2** (Alternative) | YOLOv11-Face | ByteTrack | 0.30 | 0.50 |
+
+**How to switch presets:**
+```bash
+# CLI argument (priority)
+python main.py --preset 2
+
+# Environment variable
+DETECTION_PRESET=2 python main.py
+
+# In .env file
+DETECTION_PRESET=2
 ```
 
 ### Validate Configuration

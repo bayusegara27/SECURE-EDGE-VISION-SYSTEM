@@ -57,7 +57,8 @@
 | **Bahasa Pemrograman** | Python 3.12+ |
 | **AI Framework** | PyTorch + Ultralytics YOLOv8 |
 | **Web Framework** | FastAPI + Uvicorn |
-| **Algoritma Deteksi** | YOLOv8-Face (WIDER Face Dataset) |
+| **Algoritma Deteksi** | YOLOv8-Face / YOLOv11-Face (via presets) |
+| **Algoritma Tracking** | BoT-SORT / ByteTrack (via presets) |
 | **Algoritma Enkripsi** | AES-256-GCM (Authenticated Encryption) |
 | **Algoritma Hash** | SHA-256 (Integrity Verification) |
 | **Target Hardware** | NVIDIA RTX 3050 (atau setara) |
@@ -68,7 +69,8 @@
 ## ✨ Fitur Utama
 
 ### 🤖 1. Intelligent AI Engine
-- **Face Detection**: Deteksi wajah real-time menggunakan YOLOv8-Face
+- **Face Detection**: Deteksi wajah real-time menggunakan YOLOv8-Face / YOLOv11-Face
+- **Detection Presets**: 2 preset konfigurasi (Default & Alternative) yang mudah dipilih
 - **Smart Blur**: Gaussian Blur (51x51 kernel) dengan 15% padding
 - **GPU Accelerated**: Optimisasi CUDA untuk performa maksimal
 - **Multi-Camera**: Dukungan hingga 3 kamera simultan
@@ -140,6 +142,7 @@ SECURE-EDGE-VISION-SYSTEM/
 ├── main.py                    # FastAPI server & orchestrator
 ├── server.py                  # Alternative server entry
 ├── config.py                  # Configuration utility
+├── presets.yaml               # Detection presets configuration
 ├── benchmark.py               # Performance benchmark tool
 ├── demo.py                    # Component test & demo
 ├── requirements.txt           # Python dependencies
@@ -222,7 +225,14 @@ nano .env
 
 ### 3. Run
 ```bash
+# Default preset (YOLOv8-Face + BoT-SORT)
 python main.py
+
+# Alternative preset (YOLOv11-Face + ByteTrack)
+python main.py --preset 2
+
+# Using environment variable
+DETECTION_PRESET=2 python main.py
 ```
 
 ### 4. Access

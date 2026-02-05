@@ -197,8 +197,18 @@ CAMERA_SOURCES=0
 # Model path (will auto-download yolov8n.pt if not found)
 MODEL_PATH=models/model.pt
 
+# Detection preset (1 or 2)
+# Preset 1: YOLOv8-Face + BoT-SORT (conf=0.35, iou=0.45)
+# Preset 2: YOLOv11-Face + ByteTrack (conf=0.30, iou=0.50)
+DETECTION_PRESET=1
+
 # Detection confidence threshold (0.0 - 1.0)
+# Note: Can be overridden by preset values
 DETECTION_CONFIDENCE=0.5
+
+# IoU threshold for NMS/tracking (0.0 - 1.0)
+# Note: Can be overridden by preset values
+DETECTION_IOU=0.45
 
 # Device: cuda (GPU) or cpu
 DEVICE=cuda
@@ -349,7 +359,14 @@ python demo.py --quick
 ### 2. Run Main Application
 
 ```bash
+# With default preset
 python main.py
+
+# With alternative preset
+python main.py --preset 2
+
+# With custom options
+python main.py --preset 1 --device cuda --port 8000
 ```
 
 **Expected Output:**
@@ -357,7 +374,11 @@ python main.py
 ============================================================
 Starting Secure Edge Vision System (Multi-Camera)
 ============================================================
+INFO: Active Preset: Default (YOLOv8-Face + BoT-SORT)
+INFO: Detector: yolov8n-face
+INFO: Tracker: botsort
 INFO: Loaded: models/model.pt (Face model)
+INFO: Detection config: conf=0.35, iou=0.45, tracker=botsort
 INFO: Processor ready on CUDA
 INFO: Initializing Channel 0: 0
 INFO: System ready! All 1 threads starting...

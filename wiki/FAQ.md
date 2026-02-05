@@ -39,19 +39,27 @@
 
 **Jawaban:**
 
-> "Sistem menggunakan **YOLOv8-Face**, model deteksi wajah yang di-training pada dataset **WIDER Face** dengan 32,000+ gambar wajah.
+> "Sistem menggunakan model deteksi wajah yang dapat dikonfigurasi melalui **preset system**. Default menggunakan **YOLOv8-Face**, yang di-training pada dataset **WIDER Face** dengan 32,000+ gambar wajah.
+>
+> **Preset 1 (Default):** YOLOv8-Face + BoT-SORT (conf=0.35, iou=0.45)
+> **Preset 2 (Alternative):** YOLOv11-Face + ByteTrack (conf=0.30, iou=0.50)
 >
 > Proses deteksi:
 > 1. Frame di-resize ke 640x640 untuk konsistensi
-> 2. Model YOLOv8 melakukan forward pass (~15ms di GPU)
+> 2. Model YOLOv8/YOLOv11 melakukan forward pass (~15ms di GPU)
 > 3. Output berupa bounding box [x1, y1, x2, y2] dengan confidence score
-> 4. Box dengan confidence > 0.5 dianggap valid detection
+> 4. Box dengan confidence > threshold (0.35 atau 0.30) dianggap valid detection
 > 5. Setiap box diperbesar 15% untuk coverage lebih baik
 > 6. Area tersebut kemudian di-blur dengan Gaussian filter 51x51"
 
 **Diagram:**
 ```
-Input Frame → YOLOv8 Inference → Bounding Boxes → Padding 15% → Gaussian Blur
+Input Frame → YOLO Inference → Bounding Boxes → Padding 15% → Gaussian Blur
+```
+
+**Switching Presets:**
+```bash
+python main.py --preset 2  # Use alternative preset
 ```
 
 ---
@@ -223,14 +231,48 @@ python tools/decryptor.py decrypt test.enc
 
 ---
 
-### Q10: Apa batasan (Limitation) sistem kamu?
+### Q10: Apa itu Detection Preset dan bagaimana cara pakainya?
+
+**Jawaban:**
+
+> "Sistem mendukung **2 preset deteksi** yang memudahkan pengguna untuk berganti konfigurasi tanpa mengedit kode:
+>
+> **Preset 1 (Default):**
+> - Detector: YOLOv8-Face (nano)
+> - Tracker: BoT-SORT  
+> - Confidence: 0.35, IoU: 0.45
+> - Karakteristik: Balanced, recommended untuk general use
+>
+> **Preset 2 (Alternative):**
+> - Detector: YOLOv11-Face (nano)
+> - Tracker: ByteTrack
+> - Confidence: 0.30, IoU: 0.50
+> - Karakteristik: Experimental, more detections dengan trade-off speed
+>
+> **Cara menggunakan:**
+> ```bash
+> # CLI argument (prioritas tertinggi)
+> python main.py --preset 2
+>
+> # Environment variable
+> DETECTION_PRESET=2 python main.py
+>
+> # Dalam .env file
+> DETECTION_PRESET=2
+> ```
+>
+> Preset didefinisikan dalam file `presets.yaml` dan bisa dikustomisasi sesuai kebutuhan."
+
+---
+
+### Q11: Apa batasan (Limitation) sistem kamu?
 
 **Jawaban (Jujur & Akademis):**
 
 > "**Limitations:**
 >
 > 1. **Occlusion Dependency**
->    - Jika wajah tertutup masker full-face, helm, atau menghadap belakang, YOLOv8 tidak mendeteksi wajah
+>    - Jika wajah tertutup masker full-face, helm, atau menghadap belakang, YOLO tidak mendeteksi wajah
 >    - Solusi: Tambah model person detection (blur seluruh tubuh)
 >
 > 2. **Lighting Conditions**
@@ -433,8 +475,17 @@ python tools/decryptor.py decrypt test.enc
 ### Commands yang Perlu Dihapal
 
 ```bash
-# Run system
+# Run system (default preset)
 python main.py
+
+# Run system with alternative preset
+python main.py --preset 2
+
+# Run with specific preset and options
+python main.py --preset 1 --device cuda --port 8080
+
+# Using environment variable
+DETECTION_PRESET=2 python main.py
 
 # Quick test
 python demo.py --quick
@@ -458,6 +509,13 @@ python tools/decryptor.py --file evidence.enc
 python tools/decryptor.py --file evidence.enc --export output.mp4
 ```
 
+### Detection Presets
+
+| Preset | Detector | Tracker | Confidence | IoU |
+|:-------|:---------|:--------|:-----------|:----|
+| **1** (Default) | YOLOv8-Face | BoT-SORT | 0.35 | 0.45 |
+| **2** (Alternative) | YOLOv11-Face | ByteTrack | 0.30 | 0.50 |
+
 ### Angka Penting
 
 | Metrik | Nilai |
@@ -468,6 +526,8 @@ python tools/decryptor.py --file evidence.enc --export output.mp4
 | Storage Saving | 80% |
 | AES Key Size | 256-bit |
 | Hash | SHA-256 |
+| Default Confidence | 0.35 |
+| Default IoU | 0.45 |
 
 ---
 
