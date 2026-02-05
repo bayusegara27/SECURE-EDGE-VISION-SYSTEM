@@ -271,6 +271,6 @@ Untuk memahami sistem secara mendalam, ikuti urutan berikut:
   
 *Dokumentasi ini disusun untuk keperluan akademis*
 
-**© 2024 SECURE EDGE VISION SYSTEM**
+**© 2025 SECURE EDGE VISION SYSTEM**
 
 </div>
