@@ -1,6 +1,49 @@
 """
-Configuration Utility
-Validates configuration and manages environment settings
+================================================================================
+Configuration Module
+================================================================================
+Central configuration management for the Secure Edge Vision System.
+
+This module provides:
+1. Config class - Loads and validates all system settings from environment
+2. validate_config() - Checks configuration validity
+3. show_system_info() - Displays system information (Python, CUDA, etc.)
+4. generate_env_template() - Creates default .env template
+
+Environment Variables:
+    CAMERA_SOURCES         - Camera sources (comma-separated: "0", "0,1", "rtsp://...")
+    DEVICE                 - Compute device ("cuda" or "cpu")
+    MODEL_PATH             - Path to YOLOv8 face detection model
+    DETECTION_CONFIDENCE   - Detection confidence threshold (0.0-1.0)
+    BLUR_INTENSITY         - Gaussian blur kernel size (odd number)
+    SERVER_HOST            - FastAPI server host (default: 0.0.0.0)
+    SERVER_PORT            - FastAPI server port (default: 8000)
+    PUBLIC_RECORDINGS_PATH - Directory for blurred public videos
+    EVIDENCE_RECORDINGS_PATH - Directory for encrypted evidence
+    ENCRYPTION_KEY_PATH    - Path to AES-256 encryption key
+    TARGET_FPS             - Target frames per second
+    RECORDING_DURATION_SECONDS - Max seconds before file rotation
+    EVIDENCE_DETECTION_ONLY - Only save evidence when detections present
+    EVIDENCE_JPEG_QUALITY  - JPEG quality for evidence frames (0-100)
+    MAX_STORAGE_GB         - Maximum storage limit in gigabytes
+    SHOW_TIMESTAMP         - Show timestamp overlay on stream
+    SHOW_DEBUG_OVERLAY     - Show debug info overlay on stream
+
+Usage:
+    from config import Config
+    config = Config()
+    print(f"Using device: {config.device}")
+    print(f"Camera sources: {config.camera_sources}")
+
+CLI Usage:
+    python config.py --validate    # Validate configuration
+    python config.py --info        # Show system information
+    python config.py --create-env  # Create default .env file
+    python config.py --template    # Print .env template
+
+Author: SECURE EDGE VISION SYSTEM
+License: MIT
+================================================================================
 """
 
 import os
@@ -10,10 +53,42 @@ from typing import Dict, List, Tuple
 
 from dotenv import load_dotenv
 
+# Load .env file if present
 load_dotenv()
 
+
 class Config:
-    """System configuration from environment"""
+    """
+    System configuration loaded from environment variables.
+    
+    This class centralizes all configuration settings for the system.
+    Settings are loaded from environment variables with sensible defaults.
+    
+    Attributes:
+        camera_sources (List[int|str]): List of camera sources
+        device (str): Compute device - "cuda" or "cpu"
+        model_path (str): Path to YOLOv8 model file
+        confidence (float): Detection confidence threshold (0.0-1.0)
+        blur_intensity (int): Gaussian blur kernel size (must be odd)
+        server_host (str): FastAPI server host address
+        server_port (int): FastAPI server port
+        public_path (str): Directory for public (blurred) recordings
+        evidence_path (str): Directory for encrypted evidence
+        key_path (str): Path to encryption key file
+        target_fps (int): Target frames per second for recording
+        max_duration (int): Maximum recording duration before rotation
+        evidence_detection_only (bool): Only save evidence with detections
+        evidence_quality (int): JPEG quality for evidence (0-100)
+        max_storage_gb (int): Maximum storage limit
+        show_timestamp (bool): Show timestamp on video stream
+        show_debug_overlay (bool): Show debug info on video stream
+    
+    Example:
+        >>> config = Config()
+        >>> print(f"Device: {config.device}")
+        >>> print(f"Cameras: {config.camera_sources}")
+        >>> print(f"Target FPS: {config.target_fps}")
+    """
     
     def __init__(self):
         # Support multiple camera sources separated by comma

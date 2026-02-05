@@ -1,6 +1,69 @@
 """
+================================================================================
 Core Engine Module
-Handles the main processing loop, system orchestration, and component management.
+================================================================================
+Main system orchestrator for the Secure Edge Vision System.
+
+This module provides:
+1. EdgeVisionSystem class - Coordinates all components for multi-camera support
+2. processing_loop() - Background processing loop with auto-reconnect
+3. get_system() - Singleton accessor for global system instance
+
+Architecture:
+    +------------------+
+    |   Main Thread    |  (FastAPI/Uvicorn)
+    |   - Web UI       |
+    |   - API Routes   |
+    +--------+---------+
+             |
+             | Spawns N threads (one per camera)
+             |
+    +--------v---------+     +-------------------+
+    |  Camera Thread 0 | --> |  FrameProcessor   | (Shared)
+    +------------------+     +-------------------+
+    |  Camera Thread 1 | -->         |
+    +------------------+             |
+             |                       v
+             |              [Detection + Blur]
+             |                       |
+             +---+-------------------+
+                 |
+        +--------v--------+    +--------v--------+
+        |  VideoRecorder  |    | EvidenceManager |
+        |  (Public/Blur)  |    | (Raw/Encrypted) |
+        +-----------------+    +-----------------+
+
+Data Flow:
+    1. CAPTURE: OpenCV VideoCapture reads frame from camera/RTSP
+    2. RESIZE: Smart center-crop to 16:9, resize to 720p
+    3. DETECT: YOLOv8 inference returns face bounding boxes
+    4. BLUR: Gaussian blur applied to face regions
+    5. RECORD: Blurred → public MP4, Raw → encrypted .enc
+    6. STREAM: Latest frame available for web streaming
+
+Thread Model:
+    - Each camera has its own processing thread
+    - Threads share single FrameProcessor (GPU memory optimization)
+    - Frame locks protect shared state (latest_frames dict)
+    - Auto-reconnect on camera disconnect
+
+Usage:
+    from modules.engine import get_system, processing_loop
+    import threading
+    
+    system = get_system()
+    system.start()
+    
+    for i in range(num_cameras):
+        thread = threading.Thread(target=processing_loop, args=(i,))
+        thread.start()
+    
+    # Later...
+    system.stop()
+
+Author: SECURE EDGE VISION SYSTEM
+License: MIT
+================================================================================
 """
 
 import os
@@ -9,7 +72,7 @@ import logging
 import threading
 import contextlib
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Dict, Tuple, Any
 from pathlib import Path
 
 import cv2
@@ -20,13 +83,55 @@ from modules.processor import FrameProcessor
 from modules.recorder import VideoRecorder
 from modules.evidence import EvidenceManager
 
-# Configure logging
+# Configure module logger
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
 class EdgeVisionSystem:
-    """Main system orchestrator - coordinates all components for multiple cameras"""
+    """
+    Main system orchestrator - coordinates all components for multiple cameras.
+    
+    This class manages the entire video processing pipeline including:
+    - Camera connections (local webcam, RTSP streams)
+    - AI processing (face detection)
+    - Video recording (public and evidence)
+    - Frame streaming (for web dashboard)
+    
+    Key Design Decisions:
+    1. SHARED PROCESSOR: Single FrameProcessor shared across cameras
+       to minimize GPU VRAM usage (~1.5GB vs 3GB for dual processors).
+    2. PER-CAMERA RECORDERS: Each camera has dedicated VideoRecorder
+       and EvidenceManager instances.
+    3. THREAD-SAFE STATE: frame_locks dict protects latest_frames access.
+    
+    Attributes:
+        config (Config): System configuration
+        running (bool): System running state
+        processor (FrameProcessor): Shared AI processor
+        caps (Dict[int, VideoCapture]): Camera captures per index
+        public_recorders (Dict[int, VideoRecorder]): Public recorders
+        evidence_managers (Dict[int, EvidenceManager]): Evidence managers
+        latest_frames (Dict[int, ndarray]): Latest processed frames
+        latest_detections (Dict[int, int]): Detection counts
+        camera_fps (Dict[int, float]): FPS per camera
+        camera_status (Dict[int, str]): Status per camera
+        frame_locks (Dict[int, Lock]): Locks for thread-safe access
+    
+    Lifecycle:
+        1. __init__(): Load configuration
+        2. start(): Initialize processor, recorders, evidence managers
+        3. process_frame(): Called per frame per camera (from threads)
+        4. get_frame(): Called by web streaming
+        5. stop(): Cleanup all resources
+    
+    Example:
+        >>> system = EdgeVisionSystem()
+        >>> system.start()
+        >>> # Threads call process_frame() in background
+        >>> frame, dets, fps = system.get_frame(camera_idx=0)
+        >>> system.stop()
+    """
     
     def __init__(self, config: Optional[Config] = None):
         self.config = config or Config()

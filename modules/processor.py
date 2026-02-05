@@ -1,30 +1,109 @@
 """
-Frame Processor Module - YOLOv8-Face Detection
-Uses specialized face detection model for accurate, real-time face blur
-Optimized for RTX 3050 4GB GPU
+================================================================================
+Frame Processor Module - YOLOv8 Face Detection
+================================================================================
+Real-time face detection and anonymization using YOLOv8.
+
+This module provides the FrameProcessor class that handles:
+1. AI-based face detection using YOLOv8-Face model
+2. Gaussian blur application for privacy protection
+3. GPU acceleration via CUDA for real-time processing
+
+Architecture:
+    +------------------+       +------------------+       +------------------+
+    |   Input Frame    | ----> | YOLOv8 Detection | ----> |  Blur Applied    |
+    |   (1280x720)     |       |   (640x640)      |       |   (Face Areas)   |
+    +------------------+       +------------------+       +------------------+
+                                      |
+                                      v
+                               [Detection List]
+                               x1, y1, x2, y2, conf
+
+Model Selection:
+    - YOLOv8-Face (preferred): Trained on WIDER Face dataset, best accuracy
+    - YOLOv8n (fallback): General model, estimates face from person detection
+
+Performance (RTX 3050 4GB):
+    - Detection: ~15ms per frame (640x640)
+    - Blur: ~2ms per face region
+    - Total: 25-30 FPS achievable
+
+Thread Safety:
+    - process() is thread-safe when used with separate FrameProcessor instances
+    - Single shared instance works with proper synchronization
+    - Tracking disabled in multi-camera mode for safety
+
+Usage:
+    processor = FrameProcessor(
+        model_path="models/model.pt",
+        device="cuda",
+        confidence=0.5,
+        blur_intensity=51
+    )
+    processor.load_model()
+    
+    # Process frame
+    blurred, raw, detections = processor.process(frame)
+    print(f"Found {len(detections)} faces")
+
+Author: SECURE EDGE VISION SYSTEM
+License: MIT
+================================================================================
 """
 
 import os
 import time
 import logging
-from typing import List, Tuple
+from typing import List, Tuple, Dict, Any, Optional
 
 import cv2
 import numpy as np
 
+# Configure module logger
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
 class FrameProcessor:
     """
-    YOLOv8-Face based processor for real-time face anonymization
+    YOLOv8-based face detection and anonymization processor.
     
-    Features:
-    - Uses YOLOv8-Face model trained on WIDER Face dataset
-    - GPU accelerated (CUDA)
-    - Simple tracking for smoother blur
-    - Optimized for RTX 3050 4GB (25-30 FPS)
+    This class handles real-time face detection and Gaussian blur application
+    for privacy protection in video streams. It uses YOLOv8 for detection
+    and supports both GPU (CUDA) and CPU processing.
+    
+    Key Features:
+    1. AUTOMATIC MODEL SELECTION: Uses face model if available, falls back
+       to general model with face region estimation.
+    2. GPU ACCELERATION: Automatically uses CUDA if available.
+    3. ADAPTIVE BLUR: Gaussian blur with configurable intensity.
+    4. PADDING: Adds 15% padding around faces for better coverage.
+    
+    Attributes:
+        model_path (str): Path to YOLOv8 model file
+        device (str): Compute device ("cuda" or "cpu")
+        confidence (float): Detection confidence threshold
+        blur_intensity (int): Gaussian blur kernel size
+        is_face_model (bool): True if using dedicated face detection model
+        
+    Detection Output Format:
+        [
+            {
+                "x1": int,           # Left edge
+                "y1": int,           # Top edge
+                "x2": int,           # Right edge
+                "y2": int,           # Bottom edge
+                "class": str,        # "face" or "person"
+                "confidence": float, # Detection confidence
+                "timestamp": float   # Detection timestamp
+            }
+        ]
+    
+    Example:
+        >>> processor = FrameProcessor(device="cuda", confidence=0.5)
+        >>> processor.load_model()
+        >>> blurred, raw, detections = processor.process(frame)
+        >>> print(f"Detected {len(detections)} faces")
     """
     
     def __init__(
