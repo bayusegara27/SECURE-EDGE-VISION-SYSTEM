@@ -247,7 +247,7 @@ python tools/decryptor.py decrypt test.enc
 > - Detector: YOLOv11-Face (nano)
 > - Tracker: ByteTrack
 > - Confidence: 0.30, IoU: 0.50
-> - Karakteristik: Experimental, more detections dengan trade-off speed
+> - Karakteristik: Experimental, lebih banyak deteksi dengan trade-off kecepatan
 >
 > **Cara menggunakan:**
 > ```bash

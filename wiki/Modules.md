@@ -83,11 +83,11 @@ FrameProcessor(
 | Parameter | Type | Default | Description |
 |:----------|:-----|:--------|:------------|
 | `model_path` | str | `"models/model.pt"` | Path ke YOLOv8 model weights |
-| `device` | str | `"cuda"` | Device untuk inference (`cuda` atau `cpu`) |
+| `device` | str | `"cuda"` | Device untuk inference (`cuda` or `cpu`) |
 | `confidence` | float | `0.5` | Minimum confidence threshold (0.0-1.0) |
 | `iou` | float | `0.45` | IoU threshold for NMS/tracking (0.0-1.0) |
 | `blur_intensity` | int | `51` | Gaussian blur kernel size (must be odd) |
-| `tracker` | str | `"botsort"` | Tracking algorithm (`botsort` atau `bytetrack`) |
+| `tracker` | str | `"botsort"` | Tracking algorithm (`botsort` or `bytetrack`) |
 | `use_face_detection` | bool | `True` | Compatibility flag |
 
 #### Methods
