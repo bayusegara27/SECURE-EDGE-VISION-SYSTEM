@@ -758,6 +758,6 @@ Include the following when reporting issues:
 
 ## ➡️ Navigasi Wiki
 
-| Sebelumnya        | Selanjutnya   |
-| :---------------- | :------------ |
-| [Tools](Tools.md) | [FAQ](FAQ.md) |
+| Sebelumnya             | Selanjutnya   |
+| :--------------------- | :------------ |
+| [Performance](Performance.md) | [FAQ](FAQ.md) |

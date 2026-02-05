@@ -27,7 +27,7 @@
 | **RAM** | 8 GB | 16 GB |
 | **GPU** | NVIDIA GTX 1650 (4GB) | NVIDIA RTX 3050+ (6GB+) |
 | **Storage** | 256 GB SSD | 512 GB NVMe SSD |
-| **Python** | 3.10 | 3.12 |
+| **Python** | 3.10 | 3.11+ |
 
 ### GPU Requirements (CUDA)
 
@@ -48,7 +48,7 @@ Sistem memerlukan **NVIDIA GPU dengan CUDA support** untuk performa real-time:
 
 ### Software Dependencies
 
-- Python 3.10 - 3.12
+- Python 3.10 - 3.12+
 - CUDA Toolkit 11.8 atau 12.1
 - cuDNN 8.x
 - Visual C++ Redistributable 2019+ (Windows)
@@ -540,7 +540,7 @@ SECURE-EDGE-VISION-SYSTEM/
 
 Setelah instalasi, pastikan semua item berikut ✅:
 
-- [ ] Python 3.10+ terinstall
+- [ ] Python 3.11+ terinstall
 - [ ] Virtual environment aktif
 - [ ] Dependencies terinstall (`pip list | grep torch`)
 - [ ] CUDA working (`python -c "import torch; print(torch.cuda.is_available())"`)

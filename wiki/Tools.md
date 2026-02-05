@@ -814,4 +814,4 @@ python benchmark.py
 
 | Sebelumnya | Selanjutnya |
 |:-----------|:------------|
-| [API](API.md) | [Troubleshooting](Troubleshooting.md) |
+| [API](API.md) | [Performance](Performance.md) |

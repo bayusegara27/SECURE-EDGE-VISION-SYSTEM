@@ -537,7 +537,7 @@ Health check endpoint.
 {
     "status": "healthy",
     "timestamp": "2024-01-15T14:30:00Z",
-    "version": "1.3.0"
+    "version": "1.4.0"
 }
 ```
 
@@ -620,4 +620,4 @@ print(response.json())
 
 | Sebelumnya | Selanjutnya |
 |:-----------|:------------|
-| [Modules](Modules.md) | [Performance](Performance.md) |
+| [Modules](Modules.md) | [Tools](Tools.md) |

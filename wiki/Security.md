@@ -393,7 +393,7 @@ def _load_or_create_key(self, key_path: str) -> bytes:
     "end_time": 1735729500.0,
     "total_detections": 1234,
     "camera_id": "cam0",
-    "version": "1.3.0"
+    "version": "1.4.0"
 }
 ```
 

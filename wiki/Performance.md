@@ -439,4 +439,4 @@ cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Minimal buffer
 
 | Sebelumnya | Selanjutnya |
 |:-----------|:------------|
-| [API](API.md) | [FAQ](FAQ.md) |
+| [Tools](Tools.md) | [Troubleshooting](Troubleshooting.md) |

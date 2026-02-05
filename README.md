@@ -5,8 +5,8 @@
 
 ### Intelligent Surveillance System with Dual-Path Encryption
 
-![Version](https://img.shields.io/badge/version-1.3.0-blue?style=for-the-badge)
-![Python](https://img.shields.io/badge/python-3.12+-green?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-1.4.0-blue?style=for-the-badge)
+![Python](https://img.shields.io/badge/python-3.11+-green?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-MIT-yellow?style=for-the-badge)
 ![CUDA](https://img.shields.io/badge/cuda-enabled-emerald?style=for-the-badge)
 
@@ -159,7 +159,7 @@ Dokumentasi teknis yang mendalam tersedia di folder `wiki/`:
 
 ### 1. Requirements
 
-- **Python**: 3.12+
+- **Python**: 3.11+
 - **OS**: Windows 10/11 (Recommended)
 - **RAM**: 16GB (Min 8GB)
 - **GPU**: NVIDIA RTX Series (for real-time detection)
@@ -269,7 +269,13 @@ ENCRYPTION_KEY_PATH=keys/master.key
 
 ## 📊 Version History
 
-### 🏷️ v1.3.0-stable (Current)
+### 🏷️ v1.4.0-stable (Current)
+
+- ✅ Smart Video Overlays (Timestamp & Debug Info)
+- ✅ Configurable overlay toggles via .env
+- ✅ Stability fix for multi-camera stream processing
+
+### 🏷️ v1.3.0
 
 - ✅ Professional Documentation & Wiki Forgejo.
 - ✅ Advanced Analytics & Multi-Drive Monitoring.

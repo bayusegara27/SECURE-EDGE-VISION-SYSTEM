@@ -535,7 +535,7 @@ python tools/decryptor.py --file evidence.enc --export output.mp4
 
 | Sebelumnya | Kembali ke Home |
 |:-----------|:----------------|
-| [Performance](Performance.md) | [Home](Home.md) |
+| [Troubleshooting](Troubleshooting.md) | [Home](Home.md) |
 
 ---
 
