@@ -698,7 +698,7 @@ ERROR: Could not find a version that satisfies the requirement torch
 
 **Solutions:**
 
-1. **Check Python version (3.9-3.11 required):**
+1. **Check Python version (3.11+ required):**
 
    ```bash
    python --version
