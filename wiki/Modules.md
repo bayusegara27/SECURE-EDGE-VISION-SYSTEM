@@ -678,7 +678,7 @@ DETECTION_PRESET=2
 | `recorder.py` | ~690 | 1 | 3 | Public recording |
 | `evidence.py` | ~700 | 1 | 6 | Evidence management |
 | `security.py` | ~670 | 4 | 10 | Cryptography |
-| `storage.py` | ~480 | 0 | 4 | Storage utilities |
+| `storage.py` | ~480 | 4 | 2 | Storage utilities |
 | `rsa_crypto.py` | ~250 | 0 | 8 | RSA operations |
 | `config.py` | ~600 | 1 | 8 | Configuration + presets |
 
