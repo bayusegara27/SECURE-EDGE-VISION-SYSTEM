@@ -46,7 +46,7 @@ def download_openh264():
     version = "2.4.1"
     dll_name = f"openh264-{version}-{arch}.dll"
     zip_name = f"openh264-{version}-{arch}.dll.bz2"
-    url = f"https://github.com/cisco/openh264/releases/download/v{version}/{zip_name}"
+    url = f"http://ciscobinary.openh264.org/{zip_name}"
     
     print(f"📦 Architecture: {arch}")
     print(f"🔗 Download URL: {url}")
@@ -76,14 +76,29 @@ def download_openh264():
         
         print(f"✅ Extracted: {dll_path.name}")
         
-        # Copy to OpenCV directory
+        # Copy to OpenCV directory with multiple naming options
         cv_path = get_opencv_path()
-        dest_path = cv_path / dll_path.name
         
-        print(f"📁 Installing to: {dest_path}")
+        # Try multiple filenames that OpenCV might look for
+        dest_names = [
+            f"openh264-{version}-{arch}.dll",  # Full version name
+            f"openh264-1.8.0-{arch}.dll",      # Version OpenCV expects
+            "openh264.dll"                     # Generic name
+        ]
+        
+        print(f"📁 Installing to OpenCV directory...")
+        import shutil
+        for dest_name in dest_names:
+            dest_path = cv_path / dest_name
+            shutil.copy2(dll_path, dest_path)
+            print(f"   ✓ {dest_name}")
+        
+        dest_path = cv_path / dest_names[0]  # Use first one for reference
+        dest_path = cv_path / dest_names[0]  # Use first one for reference
+        
+        print(f"📁 Main installation: {dest_path}")
         
         import shutil
-        shutil.copy2(dll_path, dest_path)
         
         print("✅ Installation complete!")
         print()

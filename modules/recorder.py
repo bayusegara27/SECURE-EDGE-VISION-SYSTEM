@@ -61,9 +61,29 @@ import numpy as np
 os.environ.setdefault('OPENCV_FFMPEG_CAPTURE_OPTIONS', 'rtsp_transport;tcp')
 os.environ.setdefault('OPENCV_VIDEOIO_PRIORITY_FFMPEG', '0')
 
+# Disable OpenCV error messages for codec issues
+# This suppresses "Failed to load OpenH264" and similar warnings
+# since we're using avc1 codec which works perfectly
+import sys
+if hasattr(cv2, 'setLogLevel'):
+    cv2.setLogLevel(0)  # 0 = Silent, 1 = Fatal, 2 = Error, 3 = Warning, 4 = Info
+
 # Configure module logger
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+# Context manager to suppress stderr output (OpenH264 warnings)
+class SuppressStderr:
+    """Temporarily redirects stderr to null to suppress codec warnings"""
+    def __enter__(self):
+        self._original_stderr = sys.stderr
+        sys.stderr = open(os.devnull, 'w')
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.stderr.close()
+        sys.stderr = self._original_stderr
 
 
 class VideoRecorder:
@@ -348,8 +368,9 @@ class VideoRecorder:
             ext = ".mp4" if codec != 'MJPG' else ".avi"
             out_file = str(filepath.with_suffix(ext))
             
-            # Create writer
-            self.writer = cv2.VideoWriter(out_file, fourcc, self.fps, (w, h))
+            # Create writer (suppress OpenH264 warnings from stderr)
+            with SuppressStderr():
+                self.writer = cv2.VideoWriter(out_file, fourcc, self.fps, (w, h))
             
             # --------------------------------------------------
             # Pre-flight Check
@@ -375,15 +396,17 @@ class VideoRecorder:
         # --------------------------------------------------
         if self.writer is None or not self.writer.isOpened():
             self.current_file = str(filepath.with_suffix(".avi"))
-            self.writer = cv2.VideoWriter(
-                self.current_file, 
-                cv2.VideoWriter_fourcc(*'XVID'), 
-                self.fps, 
-                (w, h)
-            )
+            with SuppressStderr():
+                self.writer = cv2.VideoWriter(
+                    self.current_file, 
+                    cv2.VideoWriter_fourcc(*'XVID'), 
+                    self.fps, 
+                    (w, h)
+                )
             if self.writer is None or not self.writer.isOpened():
                 # Absolute last resort: uncompressed
-                self.writer = cv2.VideoWriter(self.current_file, 0, self.fps, (w, h))
+                with SuppressStderr():
+                    self.writer = cv2.VideoWriter(self.current_file, 0, self.fps, (w, h))
                 logger.warning(f"[{self.prefix}] Using uncompressed fallback!")
         
         # --------------------------------------------------

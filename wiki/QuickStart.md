@@ -1,6 +1,6 @@
 # 🚀 Quick Start Guide
 
-*Panduan cepat untuk memulai SECURE EDGE VISION SYSTEM*
+_Panduan cepat untuk memulai SECURE EDGE VISION SYSTEM_
 
 ---
 
@@ -19,13 +19,13 @@
 
 ### Hardware
 
-| Component | Minimum | Recommended |
-|:----------|:--------|:------------|
-| CPU | Intel i5 / Ryzen 5 | Intel i7 / Ryzen 7 |
-| RAM | 8 GB | 16 GB |
-| GPU | GTX 1050 Ti (4GB) | RTX 3050+ (4GB+) |
-| Storage | 50 GB SSD | 256 GB+ SSD |
-| Camera | 720p Webcam | 1080p Webcam / IP Camera |
+| Component | Minimum            | Recommended              |
+| :-------- | :----------------- | :----------------------- |
+| CPU       | Intel i5 / Ryzen 5 | Intel i7 / Ryzen 7       |
+| RAM       | 8 GB               | 16 GB                    |
+| GPU       | GTX 1050 Ti (4GB)  | RTX 3050+ (4GB+)         |
+| Storage   | 50 GB SSD          | 256 GB+ SSD              |
+| Camera    | 720p Webcam        | 1080p Webcam / IP Camera |
 
 ### Software
 
@@ -47,12 +47,14 @@ cd SECURE-EDGE-VISION-SYSTEM
 ### Step 2: Install Dependencies
 
 **Windows (Recommended):**
+
 ```batch
 # Run setup script
 setup.bat
 ```
 
 **Linux/macOS:**
+
 ```bash
 # Create virtual environment
 python -m venv venv
@@ -63,6 +65,7 @@ pip install -r requirements.txt
 ```
 
 **Manual Installation:**
+
 ```bash
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
 pip install ultralytics opencv-python fastapi uvicorn python-dotenv cryptography
@@ -102,15 +105,18 @@ DETECTION_PRESET=2 python main.py
 ```
 
 **Note**: If you see OpenH264 warnings:
+
 ```
 Failed to load OpenH264 library: openh264-1.8.0-win64.dll
 [libopenh264] Incorrect library version loaded
 ```
 
 Don't worry! The system automatically uses the `avc1` codec fallback. Your recordings work perfectly. If you want to remove the warnings, run:
+
 ```bash
 python fix_openh264.py
 ```
+
 See [OPENH264_FIX.md](../OPENH264_FIX.md) for more details.
 
 ### Step 6: Open Web Dashboard
@@ -127,13 +133,13 @@ Open browser and go to: **http://localhost:8000**
 
 Akses dashboard di `http://localhost:8000`:
 
-| Page | URL | Function |
-|:-----|:----|:---------|
-| Dashboard | `/` | Main control panel |
-| Live Stream | `/stream/0` | Camera 0 live feed |
-| Recordings | `/recordings` | View public recordings |
-| Evidence | `/evidence` | View encrypted evidence |
-| Status | `/api/status` | System status JSON |
+| Page        | URL           | Function                |
+| :---------- | :------------ | :---------------------- |
+| Dashboard   | `/`           | Main control panel      |
+| Live Stream | `/stream/0`   | Camera 0 live feed      |
+| Recordings  | `/recordings` | View public recordings  |
+| Evidence    | `/evidence`   | View encrypted evidence |
+| Status      | `/api/status` | System status JSON      |
 
 ### Starting & Stopping
 
@@ -222,39 +228,46 @@ ENCRYPTION_KEY_PATH=keys/master.key
 ### Quick Configuration Examples
 
 **Single Webcam (Default):**
+
 ```env
 CAMERA_SOURCES=0
 DEVICE=cuda
 ```
 
 **Multiple Cameras:**
+
 ```env
 CAMERA_SOURCES=0,1,2
 ```
 
 **IP Camera (RTSP):**
+
 ```env
 CAMERA_SOURCES=rtsp://admin:password@192.168.1.100:554/stream1
 ```
 
 **Mixed (Webcam + IP Camera):**
+
 ```env
 CAMERA_SOURCES=0,rtsp://admin:password@192.168.1.100:554/stream1
 ```
 
 **CPU Mode (No GPU):**
+
 ```env
 DEVICE=cpu
 DETECTION_CONFIDENCE=0.6
 ```
 
 **High Security Mode:**
+
 ```env
 EVIDENCE_DETECTION_ONLY=True
 EVIDENCE_JPEG_QUALITY=90
 ```
 
 **Alternative Detection Preset:**
+
 ```env
 DETECTION_PRESET=2
 ```
@@ -263,12 +276,13 @@ DETECTION_PRESET=2
 
 The system supports 2 detection presets for easy configuration switching:
 
-| Preset | Detector | Tracker | Confidence | IoU |
-|:-------|:---------|:--------|:-----------|:----|
-| **1** (Default) | YOLOv8-Face | BoT-SORT | 0.35 | 0.45 |
-| **2** (Alternative) | YOLOv11-Face | ByteTrack | 0.30 | 0.50 |
+| Preset              | Detector     | Tracker   | Confidence | IoU  |
+| :------------------ | :----------- | :-------- | :--------- | :--- |
+| **1** (Default)     | YOLOv8-Face  | BoT-SORT  | 0.35       | 0.45 |
+| **2** (Alternative) | YOLOv11-Face | ByteTrack | 0.30       | 0.50 |
 
 **How to switch presets:**
+
 ```bash
 # CLI argument (priority)
 python main.py --preset 2
@@ -346,13 +360,13 @@ python tools/verify_integrity.py --verify recordings/evidence/cam0/evidence_*.en
 
 ### Web Dashboard Status
 
-| Indicator | Meaning |
-|:----------|:--------|
-| 🟢 Online | Camera connected and processing |
-| 🟡 Connecting | Camera connecting... |
-| 🔴 Offline | Camera disconnected |
-| FPS: 30 | Current processing speed |
-| DET: 2 | Number of faces detected |
+| Indicator     | Meaning                         |
+| :------------ | :------------------------------ |
+| 🟢 Online     | Camera connected and processing |
+| 🟡 Connecting | Camera connecting...            |
+| 🔴 Offline    | Camera disconnected             |
+| FPS: 30       | Current processing speed        |
+| DET: 2        | Number of faces detected        |
 
 ### Console Logs
 
@@ -479,6 +493,6 @@ TARGET_FPS=15
 
 ## ➡️ Navigasi Wiki
 
-| Sebelumnya | Selanjutnya |
-|:-----------|:------------|
+| Sebelumnya      | Selanjutnya                     |
+| :-------------- | :------------------------------ |
 | [Home](Home.md) | [Installation](Installation.md) |
