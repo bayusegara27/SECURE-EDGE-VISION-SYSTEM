@@ -57,6 +57,10 @@ from typing import Optional, List, Dict, Any
 import cv2
 import numpy as np
 
+# Suppress OpenH264 warnings (system falls back to avc1 automatically)
+os.environ.setdefault('OPENCV_FFMPEG_CAPTURE_OPTIONS', 'rtsp_transport;tcp')
+os.environ.setdefault('OPENCV_VIDEOIO_PRIORITY_FFMPEG', '0')
+
 # Configure module logger
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

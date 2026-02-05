@@ -101,6 +101,18 @@ python main.py --preset 2
 DETECTION_PRESET=2 python main.py
 ```
 
+**Note**: If you see OpenH264 warnings:
+```
+Failed to load OpenH264 library: openh264-1.8.0-win64.dll
+[libopenh264] Incorrect library version loaded
+```
+
+Don't worry! The system automatically uses the `avc1` codec fallback. Your recordings work perfectly. If you want to remove the warnings, run:
+```bash
+python fix_openh264.py
+```
+See [OPENH264_FIX.md](../OPENH264_FIX.md) for more details.
+
 ### Step 6: Open Web Dashboard
 
 Open browser and go to: **http://localhost:8000**

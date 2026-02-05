@@ -4,6 +4,7 @@ Lists available cameras and allows user to select one
 """
 
 import cv2
+import sys
 import logging
 from typing import List, Tuple, Optional
 
