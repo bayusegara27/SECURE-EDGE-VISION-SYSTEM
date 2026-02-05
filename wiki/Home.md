@@ -20,14 +20,17 @@
 | No | Halaman | Deskripsi |
 |:---:|:---|:---|
 | 1 | **[Home](Home.md)** | Halaman utama dan gambaran umum sistem |
-| 2 | **[Architecture](Architecture.md)** | Arsitektur sistem, komponen, dan alur data |
-| 3 | **[Security](Security.md)** | Spesifikasi enkripsi dan keamanan data |
-| 4 | **[DualPath](DualPath.md)** | Mekanisme Dual-Path (Public vs Evidence) |
-| 5 | **[Installation](Installation.md)** | Panduan instalasi dan konfigurasi |
-| 6 | **[Modules](Modules.md)** | Dokumentasi modul-modul Python |
-| 7 | **[API](API.md)** | Dokumentasi API endpoints |
-| 8 | **[Performance](Performance.md)** | Metrik performa dan benchmark |
-| 9 | **[FAQ](FAQ.md)** | FAQ untuk persiapan sidang skripsi |
+| 2 | **[QuickStart](QuickStart.md)** | 🚀 Panduan cepat memulai dalam 5 menit |
+| 3 | **[Architecture](Architecture.md)** | Arsitektur sistem, komponen, dan alur data |
+| 4 | **[Security](Security.md)** | Spesifikasi enkripsi dan keamanan data |
+| 5 | **[DualPath](DualPath.md)** | Mekanisme Dual-Path (Public vs Evidence) |
+| 6 | **[Installation](Installation.md)** | Panduan instalasi dan konfigurasi |
+| 7 | **[Modules](Modules.md)** | Dokumentasi modul-modul Python |
+| 8 | **[API](API.md)** | Dokumentasi API endpoints |
+| 9 | **[Tools](Tools.md)** | 🛠️ Dokumentasi CLI tools lengkap |
+| 10 | **[Performance](Performance.md)** | Metrik performa dan benchmark |
+| 11 | **[Troubleshooting](Troubleshooting.md)** | 🔧 Panduan mengatasi masalah |
+| 12 | **[FAQ](FAQ.md)** | FAQ untuk persiapan sidang skripsi |
 
 ---
 
@@ -231,13 +234,24 @@ Buka browser: `http://localhost:8000`
 
 Untuk memahami sistem secara mendalam, ikuti urutan berikut:
 
-1. **[Architecture](Architecture.md)** - Pahami arsitektur dan komponen sistem
-2. **[Security](Security.md)** - Pelajari mekanisme keamanan dan enkripsi
-3. **[DualPath](DualPath.md)** - Pahami konsep dual-path storage
-4. **[Modules](Modules.md)** - Referensi kode per-modul
-5. **[API](API.md)** - Dokumentasi endpoint API
-6. **[Performance](Performance.md)** - Data benchmark dan metrik
-7. **[FAQ](FAQ.md)** - Persiapan sidang skripsi
+### 🚀 Untuk Pemula
+1. **[QuickStart](QuickStart.md)** - Setup dalam 5 menit
+2. **[Installation](Installation.md)** - Instalasi lengkap dengan CUDA
+
+### 📚 Untuk Memahami Sistem
+3. **[Architecture](Architecture.md)** - Pahami arsitektur dan komponen sistem
+4. **[Security](Security.md)** - Pelajari mekanisme keamanan dan enkripsi
+5. **[DualPath](DualPath.md)** - Pahami konsep dual-path storage
+
+### 💻 Untuk Developer
+6. **[Modules](Modules.md)** - Referensi kode per-modul
+7. **[API](API.md)** - Dokumentasi endpoint API
+8. **[Tools](Tools.md)** - CLI tools dan contoh penggunaan
+
+### 📊 Untuk Evaluasi
+9. **[Performance](Performance.md)** - Data benchmark dan metrik
+10. **[Troubleshooting](Troubleshooting.md)** - Solusi masalah umum
+11. **[FAQ](FAQ.md)** - Persiapan sidang skripsi
 
 ---
 
