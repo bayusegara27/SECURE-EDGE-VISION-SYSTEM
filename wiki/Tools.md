@@ -568,33 +568,44 @@ python demo.py --device cpu
 
 | Argument | Default | Description |
 |:---------|:--------|:------------|
-| `--source` | `0` | Camera source (index or URL) |
-| `--confidence` | `0.5` | Detection confidence threshold |
-| `--blur` | `51` | Blur intensity (odd number) |
-| `--device` | `cuda` | Device (cuda/cpu) |
+| `--cameras, -c` | - | List available cameras |
+| `--quick, -q` | - | Quick test (skip live preview) |
+| `--camera` | `0` | Camera source (index or URL) |
 
 ### Example Output
 
 ```bash
 python demo.py
 
-# ══════════════════════════════════════════════════════════
-#   SECURE EDGE VISION - FACE DETECTION DEMO
-# ══════════════════════════════════════════════════════════
+# ╔══════════════════════════════════════════════════════════════╗
+# ║   SECURE EDGE                                                ║
+# ║   Real-time Video Anonymization System                       ║
+# ╚══════════════════════════════════════════════════════════════╝
 #
-# Loading YOLOv8 face model...
-# ✓ Model loaded on CUDA (NVIDIA RTX 3050)
+# ┌──────────────────────────────────────────────────────────────┐
+# │ Camera                                                       │
+# └──────────────────────────────────────────────────────────────┘
+#   ✓ Camera opened: 0
+#   → Resolution: 1920x1080 @ 30fps
 #
-# Starting camera 0...
-# ✓ Camera opened: 1920x1080 @ 30fps
+# ┌──────────────────────────────────────────────────────────────┐
+# │ GPU (CUDA)                                                   │
+# └──────────────────────────────────────────────────────────────┘
+#   ✓ CUDA Available
+#   → GPU: NVIDIA GeForce RTX 3050
+#   → Memory: 4.0 GB
+#   → CUDA: 11.8
 #
-# Press 'Q' to quit
+# ... [Shows live preview with blurred faces]
 #
-# [Shows real-time video with blurred faces]
+#   TEST SUMMARY
+#   ✓ Camera
+#   ✓ GPU
+#   ✓ AI Model
+#   ✓ Security
+#   ✓ Live Blur
 #
-# Detection stats:
-#   FPS: 28.5
-#   Faces detected: 2
+#   🎉 All tests passed!
 ```
 
 ---
@@ -611,17 +622,16 @@ Performance benchmarking tool untuk mengukur:
 ### Usage
 
 ```bash
-# Run full benchmark
+# Run full benchmark (60 seconds)
 python benchmark.py
 
-# Quick benchmark (100 frames)
-python benchmark.py --frames 100
+# Quick benchmark (10 seconds)
+python benchmark.py --duration 10
 
-# Benchmark specific component
-python benchmark.py --component detection
-python benchmark.py --component encryption
+# Extended stress test (5 minutes)
+python benchmark.py --duration 300 --warmup 10
 
-# Save results to CSV
+# Save results to specific file
 python benchmark.py --output results.csv
 ```
 
@@ -629,10 +639,9 @@ python benchmark.py --output results.csv
 
 | Argument | Default | Description |
 |:---------|:--------|:------------|
-| `--frames` | `500` | Number of frames to test |
-| `--component` | `all` | Component to benchmark |
-| `--output` | - | Save results to CSV |
-| `--resolution` | `720p` | Test resolution |
+| `-d, --duration` | `60` | Benchmark duration in seconds |
+| `-w, --warmup` | `5` | Warmup period in seconds |
+| `-o, --output` | `recordings/benchmark_*.csv` | Output CSV file path |
 
 ### Example Output
 
@@ -640,35 +649,39 @@ python benchmark.py --output results.csv
 python benchmark.py
 
 # ══════════════════════════════════════════════════════════
-#   SECURE EDGE VISION BENCHMARK
+#   PERFORMANCE BENCHMARK
+#   For Thesis Documentation (BAB 5)
 # ══════════════════════════════════════════════════════════
 #
-# System: NVIDIA RTX 3050, CUDA 11.8
-# Resolution: 1280x720
-# Frames: 500
+# Initializing...
+# Camera: OK
+# YOLO: OK (cuda)
+# GPU: NVIDIA GeForce RTX 3050
 #
-# ─────────────────────────────────────────────────────────
-# DETECTION BENCHMARK
-# ─────────────────────────────────────────────────────────
-# Avg detection time: 15.2 ms
-# Detection FPS: 65.8
-# Min/Max: 12.1ms / 23.4ms
+# Warmup (5s)...
+# Benchmarking (60s)...
+# Progress: [====================] 60s/60s
 #
-# ─────────────────────────────────────────────────────────
-# ENCRYPTION BENCHMARK
-# ─────────────────────────────────────────────────────────
-# Avg encryption time: 2.1 ms per frame
-# Throughput: 476 frames/sec
-# Size ratio: 1.02x (after JPEG compression)
+# ══════════════════════════════════════════════════════════════════════
+#   BENCHMARK RESULTS
+# ══════════════════════════════════════════════════════════════════════
+# Metric                    Min        Max        Avg        Std       
+# ----------------------------------------------------------------------
+# Latency (ms)              12.50      35.20      18.50      4.20      
+# FPS                       25.00      32.00      28.50      2.10      
+# GPU Usage (%)             45.00      78.00      62.00      8.50      
+# Detection (ms)            10.20      28.40      15.20      3.50      
+# Blur (ms)                 1.50       5.80       2.30       0.80      
+# Detections/Frame          0.00       3.00       1.20       0.60      
+# ══════════════════════════════════════════════════════════════════════
 #
-# ─────────────────────────────────────────────────────────
-# OVERALL SYSTEM
-# ─────────────────────────────────────────────────────────
-# Total processing: 18.5 ms/frame
-# Achievable FPS: 54.0
-# Bottleneck: Detection
+# 📊 Summary for Thesis (BAB 5):
+#    • Average Latency: 18.5ms (Target: <500ms) ✓
+#    • Average FPS: 28.5 (Target: 25-30) ✓
+#    • GPU Utilization: 62.0%
+#    • Total Samples: 60
 #
-# ✓ Results saved to recordings/benchmark_20240115_143000.csv
+# Results saved to: recordings/benchmark_20240115_143000.csv
 ```
 
 ---
@@ -814,4 +827,4 @@ python benchmark.py
 
 | Sebelumnya | Selanjutnya |
 |:-----------|:------------|
-| [API](API.md) | [Troubleshooting](Troubleshooting.md) |
+| [API](API.md) | [Performance](Performance.md) |

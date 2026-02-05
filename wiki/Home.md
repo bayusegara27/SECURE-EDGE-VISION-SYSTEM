@@ -2,8 +2,8 @@
 
 <div align="center">
   
-![Version](https://img.shields.io/badge/version-1.3.0-blue?style=for-the-badge)
-![Python](https://img.shields.io/badge/python-3.12+-green?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-1.4.0-blue?style=for-the-badge)
+![Python](https://img.shields.io/badge/python-3.11+-green?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-MIT-yellow?style=for-the-badge)
 ![CUDA](https://img.shields.io/badge/cuda-enabled-emerald?style=for-the-badge)
 
@@ -54,7 +54,7 @@
 
 | Aspek | Spesifikasi |
 |:------|:------------|
-| **Bahasa Pemrograman** | Python 3.12+ |
+| **Bahasa Pemrograman** | Python 3.11+ |
 | **AI Framework** | PyTorch + Ultralytics YOLOv8 |
 | **Web Framework** | FastAPI + Uvicorn |
 | **Algoritma Deteksi** | YOLOv8-Face / YOLOv11-Face (via presets) |

@@ -539,4 +539,4 @@ sequenceDiagram
 
 | Sebelumnya | Selanjutnya |
 |:-----------|:------------|
-| [Home](Home.md) | [Security](Security.md) |
+| [QuickStart](QuickStart.md) | [Security](Security.md) |

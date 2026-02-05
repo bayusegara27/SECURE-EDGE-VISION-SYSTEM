@@ -29,7 +29,7 @@ _Panduan cepat untuk memulai SECURE EDGE VISION SYSTEM_
 
 ### Software
 
-- **Python**: 3.9 - 3.11
+- **Python**: 3.11+
 - **CUDA**: 11.x atau 12.x (untuk GPU)
 - **OS**: Windows 10/11, Ubuntu 20.04+
 
@@ -493,6 +493,6 @@ TARGET_FPS=15
 
 ## ➡️ Navigasi Wiki
 
-| Sebelumnya      | Selanjutnya                     |
-| :-------------- | :------------------------------ |
-| [Home](Home.md) | [Installation](Installation.md) |
+| Sebelumnya      | Selanjutnya                    |
+| :-------------- | :----------------------------- |
+| [Home](Home.md) | [Architecture](Architecture.md) |

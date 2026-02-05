@@ -120,7 +120,7 @@ info = processor.get_info()
 #     "model": "models/model.pt",
 #     "is_face_model": True,
 #     "device": "cuda",
-#     "confidence": 0.35,
+#     "confidence": 0.5,
 #     "iou": 0.45,
 #     "blur_intensity": 51,
 #     "tracker": "botsort",
@@ -301,12 +301,12 @@ manager = EvidenceManager("recordings/evidence")
 manager.add_frame(raw_frame, detections, sync_timestamp="20240115_143000")
 ```
 
-##### `flush(blocking: bool = True) -> Optional[str]`
+##### `flush(blocking: bool = False) -> Optional[str]`
 Encrypt dan save buffer ke file.
 
 ```python
-filepath = manager.flush()  # Blocking
-manager.flush(blocking=False)  # Background thread
+filepath = manager.flush(blocking=True)  # Blocking
+manager.flush()  # Non-blocking (default)
 ```
 
 ##### `close() -> None`
@@ -452,25 +452,50 @@ hybrid = create_hybrid_vault_from_env(for_encryption=True)
 
 ## 📁 modules/storage.py
 
+### Classes
+
+#### `RecordingConfig`
+Dataclass for recording configuration.
+
+```python
+@dataclass
+class RecordingConfig:
+    output_dir: str
+    max_duration_seconds: int = 300  # 5 minutes
+    max_size_mb: int = 100
+    fps: int = 30
+    resolution: tuple = (1280, 720)
+```
+
+#### `PublicRecorder`
+Records blurred video to MP4 files with automatic rotation.
+
+#### `EvidenceRecorder`
+Records encrypted evidence (raw frames) using Hybrid RSA+AES encryption.
+
+#### `StorageManager`
+Manages both public and evidence storage with background processes.
+
 ### Functions
 
-#### `get_storage_info(path: str) -> dict`
-Get storage usage information.
+#### `get_recording_list(directory: str) -> List[dict]`
+Get list of recordings in directory.
 
 ```python
-info = get_storage_info("recordings/")
-# Returns: {total_gb, used_gb, free_gb, percent_used}
+recordings = get_recording_list("recordings/public")
+# Returns: [{filename, path, size_mb, created}, ...]
 ```
 
-#### `cleanup_old_files(directory, max_gb, file_pattern="*.*")`
-Delete oldest files when storage exceeds limit.
+#### `cleanup_storage(public_path, evidence_path, max_gb) -> int`
+Enforce storage retention policy (FIFO). Deletes oldest files when total exceeds limit.
 
 ```python
-cleanup_old_files(Path("recordings/public"), max_gb=50)
+total_bytes = cleanup_storage(
+    "recordings/public",
+    "recordings/evidence",
+    max_gb=50
+)
 ```
-
-#### `get_directory_size(path) -> int`
-Calculate total size of directory in bytes.
 
 ---
 
@@ -648,14 +673,14 @@ DETECTION_PRESET=2
 
 | Module | Lines | Classes | Functions | Description |
 |:-------|:------|:--------|:----------|:------------|
-| `processor.py` | ~210 | 1 | 4 | AI detection & blur |
-| `engine.py` | ~380 | 1 | 3 | System orchestrator |
-| `recorder.py` | ~150 | 1 | 3 | Public recording |
-| `evidence.py` | ~210 | 1 | 6 | Evidence management |
-| `security.py` | ~610 | 4 | 10 | Cryptography |
-| `storage.py` | ~100 | 0 | 4 | Storage utilities |
-| `rsa_crypto.py` | ~150 | 0 | 8 | RSA operations |
-| `config.py` | ~400 | 1 | 8 | Configuration + presets |
+| `processor.py` | ~300 | 1 | 4 | AI detection & blur |
+| `engine.py` | ~490 | 1 | 3 | System orchestrator |
+| `recorder.py` | ~690 | 1 | 3 | Public recording |
+| `evidence.py` | ~700 | 1 | 6 | Evidence management |
+| `security.py` | ~670 | 4 | 10 | Cryptography |
+| `storage.py` | ~480 | 4 | 2 | Storage utilities |
+| `rsa_crypto.py` | ~250 | 0 | 8 | RSA operations |
+| `config.py` | ~600 | 1 | 8 | Configuration + presets |
 
 ---
 
