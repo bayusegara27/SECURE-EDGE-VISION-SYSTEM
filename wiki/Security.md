@@ -287,15 +287,19 @@ def lock_evidence(self, raw_bytes: bytes, metadata: dict) -> bytes:
 
 | Key | Size | Storage | Purpose |
 |:----|:-----|:--------|:--------|
-| **AES Master Key** | 32 bytes | `keys/master.key` | Symmetric encryption |
+| **DEK (Data Encryption Key)** | 32 bytes | In-memory per file | Encrypt each evidence package |
+| **KEK (Key Encryption Key)** | 32 bytes | Injected from KMS/TPM trust path (`EDGE_KMS_KEK_B64`) | Wrap/unwrap DEK |
 | **RSA Public Key** | 2048 bits | `keys/rsa_public.pem` | Encrypt session keys |
 | **RSA Private Key** | 2048 bits | `keys/rsa_private.pem` | Decrypt session keys |
 
-### Key Generation
+### Key Lifecycle (Envelope Encryption)
 
 ```bash
-# Generate AES master key
-python tools/key_manager.py --generate
+# Enable envelope mode
+ENVELOPE_ENCRYPTION_ENABLED=true
+
+# Inject KEK securely (example: base64 of 32-byte key from central KMS/TPM broker)
+EDGE_KMS_KEK_B64=<base64-32-byte-kek>
 
 # Generate RSA key pair
 python tools/key_manager.py --generate-rsa
@@ -304,43 +308,25 @@ python tools/key_manager.py --generate-rsa
 python tools/key_manager.py --generate-rsa --pin 1234
 ```
 
-### Key Storage Security
+### Key Storage Security (Edge Hardening)
 
 ```python
-# modules/security.py
+# 1) Generate DEK per evidence file
+dek = os.urandom(32)
 
-def _load_or_create_key(self, key_path: str) -> bytes:
-    path = Path(key_path)
-    
-    if path.exists():
-        # Load existing key
-        with open(path, 'rb') as f:
-            key = f.read()
-        return key
-    
-    # Generate new key
-    key = os.urandom(32)  # 256 bits
-    
-    # Save with restrictive permissions
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, 'wb') as f:
-        f.write(key)
-    
-    # Set file permission: owner read/write only
-    os.chmod(path, 0o600)  # -rw-------
-    
-    return key
+# 2) Wrap DEK using injected KEK (not persisted as plaintext on disk)
+wrap_nonce, wrapped_dek = vault._wrap_dek(dek)
+
+# 3) Store wrapped DEK + nonce + ciphertext in .enc package
+#    (plaintext DEK lifetime is memory-only and short-lived)
 ```
 
-### Key Backup Strategy
+### KMS/TPM Operational Notes
 
-> ⚠️ **PENTING**: Tanpa key, evidence TIDAK BISA didekripsi!
-
-**Recommended Backup Strategy:**
-1. Primary key di `keys/master.key`
-2. Backup 1: USB drive terenkripsi (offline)
-3. Backup 2: Secure cloud storage (encrypted)
-4. Backup 3: Paper backup (hex encoded, in safe)
+- KEK idealnya di-seal oleh TPM 2.0 dan hanya di-unseal pada kondisi boot tepercaya.
+- Jika perangkat dicuri dan storage dipindah ke hardware lain, unwrap DEK harus gagal.
+- Aktifkan rotasi KEK terjadwal dan revoke device saat insiden fisik.
+- Offline mode gunakan token/key cache ber-TTL ketat, lalu fail-secure saat TTL habis.
 
 ---
 
@@ -516,14 +502,14 @@ Result:          ⚠️ Partial protection (requires audit trail)
 ### Attack 4: Key Theft
 
 ```
-Attacker Action: Steal master.key file
-System Response: Attacker CAN decrypt all evidence
+Attacker Action: Steal disk / evidence file
+System Response: Cannot unwrap DEK without KEK trust path
 Mitigation:      
-  - File permissions (0o600)
-  - Key stored in secure location
-  - Future: Hardware Security Module (HSM)
-  - Hybrid RSA: Private key can be stored offline
-Result:          ⚠️ Single point of failure (use HSM for production)
+  - Envelope encryption (DEK per file)
+  - KEK injected via KMS/TPM path (not plaintext local file)
+  - Device revoke disables future unwrap
+  - Immutable audit trail for decrypt requests
+Result:          ✅ Reduced blast radius and no single static master-key file dependency
 ```
 
 ### Attack 5: Memory Dump

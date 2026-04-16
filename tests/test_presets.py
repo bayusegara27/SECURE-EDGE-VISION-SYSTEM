@@ -33,7 +33,7 @@ class TestPresetLoading:
         preset = get_preset(1)
         
         assert preset["detector"] == "yolov8n-face"
-        assert preset["tracker"] == "botsort"
+        assert preset["tracker"] == "bytetrack"
         assert preset["confidence"] == 0.35
         assert preset["iou"] == 0.45
     
@@ -56,7 +56,7 @@ class TestPresetLoading:
         preset = get_preset(99)
         
         assert preset["detector"] == "yolov8n-face"
-        assert preset["tracker"] == "botsort"
+        assert preset["tracker"] == "bytetrack"
     
     def test_default_presets_fallback(self):
         """Test that default presets are returned when YAML not found"""
@@ -86,7 +86,7 @@ class TestConfigWithPresets:
             
             assert config.preset_id == 1
             assert config.detector == "yolov8n-face"
-            assert config.tracker == "botsort"
+            assert config.tracker == "bytetrack"
         finally:
             if env_backup:
                 os.environ["DETECTION_PRESET"] = env_backup
@@ -153,7 +153,7 @@ class TestConfigWithPresets:
         
         assert info["preset_id"] == 1
         assert info["detector"] == "yolov8n-face"
-        assert info["tracker"] == "botsort"
+        assert info["tracker"] == "bytetrack"
         assert "confidence" in info
         assert "iou" in info
     
@@ -237,7 +237,7 @@ class TestPresetIntegration:
         assert "tracker" in info
         assert info["confidence"] == 0.35
         assert info["iou"] == 0.45
-        assert info["tracker"] == "botsort"
+        assert info["tracker"] == "bytetrack"
 
 
 if __name__ == "__main__":

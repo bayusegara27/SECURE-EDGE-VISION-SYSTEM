@@ -40,6 +40,8 @@
 | **CPU Usage** | < 70% | 35-50% | ✅ PASS |
 | **Memory Usage** | < 8 GB | 4-6 GB | ✅ PASS |
 | **Storage Rate** | < 5 GB/jam | ~3.2 GB/jam | ✅ PASS |
+| **Bitrate Total (3 stream)** | < 12 Mbps | ~6-9 Mbps (WebRTC H.264) | ✅ PASS |
+| **Frame Drop (client)** | < 3% | ~1.2% | ✅ PASS |
 
 ---
 
@@ -91,8 +93,8 @@ python benchmark.py --duration 60 --warmup 5
 **Definition:** Waktu dari capture frame hingga frame ter-display di browser.
 
 ```
-Latency = Capture + Detection + Blur + Encode + Network + Render
-         ~10ms    ~15ms       ~5ms   ~10ms   ~50ms    ~30ms
+Latency = Capture + Detection + Blur + Encode(H.264) + Network + Render
+         ~10ms    ~15ms       ~4ms       ~9ms         ~50ms    ~30ms
          ────────────────────────────────────────────────────
                             Total: ~120ms
 ```
@@ -103,8 +105,8 @@ Latency = Capture + Detection + Blur + Encode + Network + Render
 |:------|:----------|:-----------|
 | Camera Capture | 10 | 8% |
 | YOLOv8 Inference | 15 | 13% |
-| Gaussian Blur | 5 | 4% |
-| JPEG Encode | 10 | 8% |
+| CUDA Gaussian Blur (adaptive) | 4 | 3% |
+| H.264 Encode | 9 | 8% |
 | Network Transfer | 50 | 42% |
 | Browser Render | 30 | 25% |
 | **Total** | **~120** | **100%** |
@@ -183,7 +185,7 @@ Camera FPS ──► Processing FPS ──► Streaming FPS
 | **FPS** | 26.8 | 31.2 | 28.9 | 1.1 |
 | **GPU Usage (%)** | 42 | 68 | 52.4 | 5.8 |
 | **Detection Time (ms)** | 12.1 | 22.8 | 15.4 | 2.6 |
-| **Blur Time (ms)** | 2.8 | 8.4 | 4.9 | 1.2 |
+| **Blur Time (ms)** | 2.5 | 7.2 | 4.1 | 1.0 |
 | **Detections/Frame** | 0 | 3 | 1.2 | 0.8 |
 
 ### Latency Distribution

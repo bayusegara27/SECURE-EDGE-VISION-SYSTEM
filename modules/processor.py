@@ -54,6 +54,7 @@ License: MIT
 import os
 import time
 import logging
+from collections import deque
 from typing import List, Tuple, Dict, Any, Optional
 
 import cv2
@@ -140,8 +141,25 @@ class FrameProcessor:
         self.device = device
         self.confidence = confidence
         self.iou = iou
-        self.blur_intensity = blur_intensity if blur_intensity % 2 == 1 else blur_intensity + 1
-        self.tracker = tracker
+        self.requested_blur_intensity = self._normalize_kernel(blur_intensity)
+        self.min_blur_intensity = self._normalize_kernel(
+            int(os.getenv("MIN_BLUR_INTENSITY", "21"))
+        )
+        if self.min_blur_intensity > self.requested_blur_intensity:
+            self.min_blur_intensity = self.requested_blur_intensity
+        self.blur_intensity = self.requested_blur_intensity
+        self.tracker = "bytetrack"
+        if str(tracker).lower() != "bytetrack":
+            logger.warning("Tracker '%s' ignored; forcing ByteTrack for edge profile.", tracker)
+        self.blur_mode = "cpu"
+        self.adaptive_blur_enabled = os.getenv("ADAPTIVE_BLUR_ENABLED", "true").lower() == "true"
+        self.target_frame_ms = float(os.getenv("TARGET_FRAME_MS", "35"))
+        self._latency_samples = deque(maxlen=30)
+        self._pressure_streak = 0
+        self._recover_streak = 0
+
+        self._cuda_blur_available = False
+        self._cuda_blur_filters: Dict[Tuple[int, int], Any] = {}
         
         self.model = None
         self._is_loaded = False
@@ -150,6 +168,87 @@ class FrameProcessor:
         self._last_faces = []
         self._last_time = 0
         self._timeout = 0.3  # Keep faces for 300ms after lost
+
+    @staticmethod
+    def _normalize_kernel(value: int) -> int:
+        value = max(3, int(value))
+        return value if value % 2 == 1 else value + 1
+
+    @staticmethod
+    def _opencv_roi_type(roi: np.ndarray) -> int:
+        channels = 1 if roi.ndim == 2 else roi.shape[2]
+        if roi.dtype != np.uint8:
+            return cv2.CV_8UC3 if channels == 3 else cv2.CV_8UC1
+        return cv2.CV_8UC3 if channels == 3 else cv2.CV_8UC1
+
+    def _setup_cuda_blur(self) -> None:
+        self._cuda_blur_available = False
+        if self.device != "cuda":
+            return
+        if not hasattr(cv2, "cuda"):
+            logger.warning("OpenCV CUDA module not available, using CPU blur fallback.")
+            return
+        try:
+            if cv2.cuda.getCudaEnabledDeviceCount() <= 0:
+                logger.warning("No CUDA-enabled OpenCV device found, using CPU blur fallback.")
+                return
+            self._cuda_blur_available = True
+            self.blur_mode = "cuda"
+            logger.info("GPU blur path enabled (cv2.cuda GaussianFilter).")
+        except Exception as e:
+            logger.warning(f"Failed to initialize OpenCV CUDA blur path: {e}")
+
+    def _get_cuda_filter(self, roi: np.ndarray, kernel_size: int):
+        roi_type = self._opencv_roi_type(roi)
+        key = (roi_type, kernel_size)
+        if key not in self._cuda_blur_filters:
+            self._cuda_blur_filters[key] = cv2.cuda.createGaussianFilter(
+                roi_type,
+                roi_type,
+                (kernel_size, kernel_size),
+                0,
+            )
+        return self._cuda_blur_filters[key]
+
+    def _apply_blur_cpu(self, roi: np.ndarray, kernel_size: int) -> np.ndarray:
+        return cv2.GaussianBlur(roi, (kernel_size, kernel_size), 0)
+
+    def _apply_blur_gpu(self, roi: np.ndarray, kernel_size: int) -> np.ndarray:
+        gpu_roi = cv2.cuda_GpuMat()
+        gpu_roi.upload(roi)
+        gpu_filter = self._get_cuda_filter(roi, kernel_size)
+        gpu_blurred = gpu_filter.apply(gpu_roi)
+        return gpu_blurred.download()
+
+    def _update_adaptive_blur(self, frame_ms: float, face_count: int) -> None:
+        if not self.adaptive_blur_enabled:
+            return
+
+        self._latency_samples.append(frame_ms)
+        avg_ms = sum(self._latency_samples) / len(self._latency_samples)
+        high_pressure = avg_ms > (self.target_frame_ms * 1.2) or face_count >= 6
+        low_pressure = avg_ms < (self.target_frame_ms * 0.8) and face_count <= 2
+
+        if high_pressure and self.blur_intensity > self.min_blur_intensity:
+            self._pressure_streak += 1
+            self._recover_streak = 0
+            if self._pressure_streak >= 5:
+                self.blur_intensity = max(self.min_blur_intensity, self.blur_intensity - 2)
+                self._pressure_streak = 0
+                logger.info(f"Adaptive blur: GPU pressure detected, kernel adjusted to {self.blur_intensity}.")
+            return
+
+        if low_pressure and self.blur_intensity < self.requested_blur_intensity:
+            self._recover_streak += 1
+            self._pressure_streak = 0
+            if self._recover_streak >= 15:
+                self.blur_intensity = min(self.requested_blur_intensity, self.blur_intensity + 2)
+                self._recover_streak = 0
+                logger.info(f"Adaptive blur: pressure normalized, kernel restored to {self.blur_intensity}.")
+            return
+
+        self._pressure_streak = 0
+        self._recover_streak = 0
     
     def load_model(self) -> bool:
         """Load YOLOv8 model"""
@@ -172,6 +271,7 @@ class FrameProcessor:
             self.model = YOLO(self.model_path)
             logger.info(f"Loaded: {self.model_path} ({'Face' if self.is_face_model else 'Person'} model)")
             logger.info(f"Detection config: conf={self.confidence}, iou={self.iou}, tracker={self.tracker}")
+            self._setup_cuda_blur()
             
             # Warm up
             dummy = np.zeros((480, 480, 3), dtype=np.uint8)
@@ -258,11 +358,18 @@ class FrameProcessor:
             
             if x2 > x1 and y2 > y1:
                 roi = blurred[y1:y2, x1:x2]
-                blurred_roi = cv2.GaussianBlur(
-                    roi,
-                    (self.blur_intensity, self.blur_intensity),
-                    0
-                )
+                kernel = self.blur_intensity
+                try:
+                    if self._cuda_blur_available:
+                        blurred_roi = self._apply_blur_gpu(roi, kernel)
+                    else:
+                        blurred_roi = self._apply_blur_cpu(roi, kernel)
+                except Exception as e:
+                    if self._cuda_blur_available:
+                        logger.warning(f"GPU blur failed, switching to CPU fallback: {e}")
+                    self._cuda_blur_available = False
+                    self.blur_mode = "cpu-fallback"
+                    blurred_roi = self._apply_blur_cpu(roi, kernel)
                 blurred[y1:y2, x1:x2] = blurred_roi
                 
                 # Draw Visual Indicator (Green Box) - REMOVED per user request
@@ -282,8 +389,11 @@ class FrameProcessor:
             if not self.load_model():
                 return frame, frame, []
         
+        process_start = time.perf_counter()
         faces = self._detect_faces(frame)
         blurred = self._apply_blur(frame, faces)
+        frame_ms = (time.perf_counter() - process_start) * 1000.0
+        self._update_adaptive_blur(frame_ms, len(faces))
         
         return blurred, frame, faces
     
@@ -296,6 +406,10 @@ class FrameProcessor:
             "confidence": self.confidence,
             "iou": self.iou,
             "blur_intensity": self.blur_intensity,
+            "requested_blur_intensity": self.requested_blur_intensity,
+            "min_blur_intensity": self.min_blur_intensity,
+            "blur_mode": "cuda" if self._cuda_blur_available else "cpu",
+            "adaptive_blur_enabled": self.adaptive_blur_enabled,
             "tracker": self.tracker,
             "is_loaded": self._is_loaded
         }

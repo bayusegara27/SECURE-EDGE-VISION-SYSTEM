@@ -61,6 +61,7 @@ import hashlib
 import os
 import base64
 import logging
+import struct
 from pathlib import Path
 from typing import Tuple, Optional, Dict, Any
 from dataclasses import dataclass
@@ -96,8 +97,17 @@ class SecureVault:
     NONCE_SIZE = 12  # 96 bits for GCM
     KEY_SIZE = 32    # 256 bits
     SALT_SIZE = 16   # 128 bits
+    ENVELOPE_MAGIC = b"ENVKMS1\x00"
+    WRAP_NONCE_SIZE = 12
     
-    def __init__(self, key: Optional[bytes] = None, key_path: Optional[str] = None):
+    def __init__(
+        self,
+        key: Optional[bytes] = None,
+        key_path: Optional[str] = None,
+        use_envelope: Optional[bool] = None,
+        kek: Optional[bytes] = None,
+        kek_env_var: str = "EDGE_KMS_KEK_B64"
+    ):
         """
         Initialize vault with encryption key
         
@@ -117,6 +127,80 @@ class SecureVault:
             logger.warning("Using ephemeral key - evidence will not be decryptable after restart!")
         
         self.aesgcm = AESGCM(self._key)
+        self.use_envelope = (
+            os.getenv("ENVELOPE_ENCRYPTION_ENABLED", "true").lower() == "true"
+            if use_envelope is None
+            else use_envelope
+        )
+        self._kek = kek if kek is not None else self._load_kek_from_env(kek_env_var)
+        if self.use_envelope and self._kek is None:
+            logger.warning(
+                "Envelope mode requested but KEK is unavailable; falling back to legacy static-key mode."
+            )
+            self.use_envelope = False
+
+    @classmethod
+    def _load_kek_from_env(cls, env_name: str) -> Optional[bytes]:
+        raw = os.getenv(env_name, "").strip()
+        if not raw:
+            return None
+        try:
+            kek = base64.b64decode(raw)
+            if len(kek) != cls.KEY_SIZE:
+                raise ValueError(f"KEK must be {cls.KEY_SIZE} bytes after base64 decode")
+            return kek
+        except Exception as e:
+            logger.warning(f"Invalid KEK in {env_name}: {e}")
+            return None
+
+    def _wrap_dek(self, dek: bytes) -> Tuple[bytes, bytes]:
+        if self._kek is None:
+            raise ValueError("KEK unavailable for DEK wrapping")
+        wrap_nonce = os.urandom(self.WRAP_NONCE_SIZE)
+        wrapped = AESGCM(self._kek).encrypt(wrap_nonce, dek, associated_data=None)
+        return wrap_nonce, wrapped
+
+    def _unwrap_dek(self, wrap_nonce: bytes, wrapped_dek: bytes) -> bytes:
+        if self._kek is None:
+            raise ValueError("KEK unavailable for DEK unwrapping")
+        return AESGCM(self._kek).decrypt(wrap_nonce, wrapped_dek, associated_data=None)
+
+    def _lock_evidence_with_key(
+        self, raw_bytes: bytes, dek: bytes, metadata: Optional[dict] = None
+    ) -> EncryptedPackage:
+        original_hash = hashlib.sha256(raw_bytes).hexdigest()
+        payload = original_hash.encode("utf-8") + b"::" + raw_bytes
+        nonce = os.urandom(self.NONCE_SIZE)
+        ciphertext = AESGCM(dek).encrypt(nonce, payload, associated_data=None)
+        return EncryptedPackage(
+            nonce=nonce,
+            ciphertext=ciphertext,
+            original_hash=original_hash,
+            timestamp=datetime.now().timestamp(),
+            metadata=metadata or {}
+        )
+
+    def _unlock_evidence_with_key(self, package: EncryptedPackage, dek: bytes) -> Tuple[bytes, str]:
+        try:
+            payload = AESGCM(dek).decrypt(package.nonce, package.ciphertext, associated_data=None)
+        except Exception as e:
+            raise ValueError(f"Decryption failed - evidence may have been tampered with: {e}")
+
+        separator = b"::"
+        try:
+            sep_index = payload.index(separator)
+            stored_hash = payload[:sep_index].decode("utf-8")
+            original_data = payload[sep_index + len(separator):]
+        except (ValueError, UnicodeDecodeError) as e:
+            raise ValueError(f"Invalid payload format - evidence may have been tampered with: {e}")
+
+        computed_hash = hashlib.sha256(original_data).hexdigest()
+        if computed_hash != stored_hash:
+            raise ValueError(
+                f"AUDIT WARNING: INTEGRITY CHECK FAILED for evidence package!\n"
+                f"Expected: {stored_hash} | Computed: {computed_hash}"
+            )
+        return original_data, stored_hash
     
     @staticmethod
     def generate_key() -> bytes:
@@ -282,8 +366,25 @@ class SecureVault:
         - Rest: ciphertext
         """
         import json
-        import struct
         
+        if self.use_envelope and self._kek is not None:
+            dek = os.urandom(self.KEY_SIZE)
+            wrap_nonce, wrapped_dek = self._wrap_dek(dek)
+            package = self._lock_evidence_with_key(data, dek, metadata)
+            meta_json = json.dumps(package.metadata).encode('utf-8')
+            with open(output_path, 'wb') as f:
+                f.write(self.ENVELOPE_MAGIC)                   # 8 bytes
+                f.write(wrap_nonce)                            # 12 bytes
+                f.write(struct.pack('H', len(wrapped_dek)))   # 2 bytes
+                f.write(wrapped_dek)                           # Variable
+                f.write(package.nonce)                         # 12 bytes
+                f.write(struct.pack('d', package.timestamp))   # 8 bytes
+                f.write(struct.pack('I', len(meta_json)))      # 4 bytes
+                f.write(meta_json)                             # Variable
+                f.write(package.ciphertext)                    # Rest
+            logger.debug(f"Saved envelope-encrypted evidence: {output_path}")
+            return
+
         package = self.lock_evidence(data, metadata)
         
         # Serialize metadata
@@ -307,10 +408,36 @@ class SecureVault:
             (decrypted_data, metadata)
         """
         import json
-        import struct
         
         with open(input_path, 'rb') as f:
-            # Read header
+            first_8 = f.read(8)
+            f.seek(0)
+            if first_8 == self.ENVELOPE_MAGIC:
+                if self._kek is None:
+                    raise ValueError("Cannot decrypt envelope file: KEK unavailable")
+                f.read(8)  # magic
+                wrap_nonce = f.read(self.WRAP_NONCE_SIZE)
+                wrapped_len = struct.unpack('H', f.read(2))[0]
+                wrapped_dek = f.read(wrapped_len)
+                nonce = f.read(self.NONCE_SIZE)
+                timestamp = struct.unpack('d', f.read(8))[0]
+                meta_len = struct.unpack('I', f.read(4))[0]
+                meta_json = f.read(meta_len)
+                ciphertext = f.read()
+
+                metadata = json.loads(meta_json.decode('utf-8'))
+                package = EncryptedPackage(
+                    nonce=nonce,
+                    ciphertext=ciphertext,
+                    original_hash="",
+                    timestamp=timestamp,
+                    metadata=metadata
+                )
+                dek = self._unwrap_dek(wrap_nonce, wrapped_dek)
+                data, _ = self._unlock_evidence_with_key(package, dek)
+                return data, metadata
+
+            # Legacy format header
             nonce = f.read(self.NONCE_SIZE)
             timestamp = struct.unpack('d', f.read(8))[0]
             meta_len = struct.unpack('I', f.read(4))[0]

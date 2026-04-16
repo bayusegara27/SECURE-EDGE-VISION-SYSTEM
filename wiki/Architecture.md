@@ -81,7 +81,7 @@ graph TB
         end
         
         subgraph DualPath["Dual-Path Processing"]
-            BLUR[Gaussian Blur<br/>Kernel 51x51]:::process
+            BLUR[CUDA Gaussian Blur<br/>Kernel 51x51 Adaptive]:::process
             ENC[AES-256-GCM<br/>Encryption]:::process
         end
         
@@ -92,7 +92,7 @@ graph TB
     end
     
     subgraph Output["Output Layer"]
-        WEB[Web Dashboard<br/>FastAPI + MJPEG]:::output
+        WEB[Web Dashboard<br/>FastAPI + WebRTC H.264<br/>MJPEG Fallback]:::output
         ANALYTICS[Analytics<br/>Chart.js]:::output
         DECRYPT[Decryption Tool<br/>Admin Only]:::output
     end
@@ -159,7 +159,7 @@ graph TB
 │  │      PUBLIC PATH        │   │         EVIDENCE PATH               │  │
 │  │                         │   │                                     │  │
 │  │  ┌─────────────────┐    │   │  ┌─────────────────────────────┐   │  │
-│  │  │  Gaussian Blur  │    │   │  │     AES-256-GCM Encrypt     │   │  │
+│  │  │ CUDA Blur (GPU) │    │   │  │  Envelope AES-256-GCM       │   │  │
 │  │  │  Kernel: 51x51  │    │   │  │  + SHA-256 Integrity Hash   │   │  │
 │  │  │  Padding: +15%  │    │   │  │  + Metadata Embedding       │   │  │
 │  │  └────────┬────────┘    │   │  └──────────────┬──────────────┘   │  │
@@ -185,7 +185,7 @@ graph TB
 │   │ Web Dashboard  │  │  Video Gallery  │  │   Decryption Tool       │  │
 │   │ (Live Stream)  │  │  (Replay MP4)   │  │   (Admin PIN Required)  │  │
 │   │                │  │                 │  │                         │  │
-│   │ - MJPEG Stream │  │ - Browse Files  │  │ - Select .enc file      │  │
+│   │ - WebRTC H.264 │  │ - Browse Files  │  │ - Select .enc file      │  │
 │   │ - Multi-Camera │  │ - Date Filter   │  │ - Enter PIN/Key         │  │
 │   │ - FPS Counter  │  │ - Video Player  │  │ - Verify Integrity      │  │
 │   └────────────────┘  └─────────────────┘  └─────────────────────────┘  │
@@ -219,7 +219,7 @@ cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Minimize latency
 
 #### FrameProcessor (`modules/processor.py`)
 - **Model**: YOLOv8-Face atau YOLOv11-Face (configurable via presets)
-- **Tracker**: BoT-SORT atau ByteTrack (configurable via presets)
+- **Tracker**: ByteTrack (production lock untuk profil RTX 3050 4GB)
 - **Inference Size**: 640x640 pixels
 - **Device**: CUDA (fallback ke CPU jika tidak tersedia)
 - **Confidence Threshold**: 0.35 (Preset 1) atau 0.30 (Preset 2)
@@ -228,8 +228,20 @@ cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Minimize latency
 #### Detection Presets
 | Preset | Detector | Tracker | Confidence | IoU |
 |:-------|:---------|:--------|:-----------|:----|
-| **1** (Default) | YOLOv8-Face | BoT-SORT | 0.35 | 0.45 |
+| **1** (Default) | YOLOv8-Face | ByteTrack | 0.35 | 0.45 |
 | **2** (Alternative) | YOLOv11-Face | ByteTrack | 0.30 | 0.50 |
+
+### Kapasitas Operasional Resmi (RTX 3050 4GB)
+
+| Stream | Resolusi | Target FPS | SLA Latency (E2E) | Catatan |
+|:------:|:--------:|:----------:|:-----------------:|:--------|
+| 1 | 1280x720 | 25-30 | ≤150ms | Profil normal |
+| 2 | 1280x720 | 24-28 | ≤180ms | Profil medium |
+| 3 | 1280x720 | 22-25 | ≤220ms | Profil maksimum |
+
+Guardrail performa:
+- Blur path wajib GPU (`cv2.cuda`) jika tersedia.
+- Adaptive blur menurunkan kernel saat tekanan GPU tinggi untuk mencegah frame drop berat.
 
 #### Detection Pipeline
 ```
@@ -280,7 +292,7 @@ Raw Frame (1280x720)
 
 #### FastAPI Server (`main.py`)
 - **Framework**: FastAPI + Uvicorn
-- **Streaming**: MJPEG over HTTP
+- **Streaming**: WebRTC (H.264) dengan fallback MJPEG over HTTP
 - **Templates**: Jinja2
 - **Static Files**: CSS, JavaScript
 

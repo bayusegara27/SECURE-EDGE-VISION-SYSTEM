@@ -10,6 +10,7 @@ import asyncio
 import threading
 import time
 import re
+from fractions import Fraction
 from pathlib import Path
 from datetime import datetime
 from contextlib import asynccontextmanager
@@ -31,7 +32,19 @@ import tempfile
 import uuid
 import hashlib
 import psutil
-from typing import Optional, Dict
+from typing import Optional, Dict, Set
+
+try:
+    from aiortc import RTCPeerConnection, RTCSessionDescription, MediaStreamTrack, RTCRtpSender
+    from av import VideoFrame
+    AIORTC_AVAILABLE = True
+except Exception:
+    RTCPeerConnection = None
+    RTCSessionDescription = None
+    MediaStreamTrack = object
+    RTCRtpSender = None
+    VideoFrame = None
+    AIORTC_AVAILABLE = False
 
 from config import Config
 from modules.engine import get_system, processing_loop
@@ -45,6 +58,46 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+pcs: Set["RTCPeerConnection"] = set()
+
+
+class WebRTCOffer(BaseModel):
+    sdp: str
+    type: str
+
+
+class CameraVideoTrack(MediaStreamTrack):
+    kind = "video"
+
+    def __init__(self, camera_idx: int):
+        super().__init__()
+        self.camera_idx = camera_idx
+        self._pts = 0
+        self._time_base = Fraction(1, 90000)
+        self._fps = 25
+
+    async def recv(self):
+        system = get_system()
+        frame = None
+
+        while system.running and frame is None:
+            frame, _, _ = system.get_frame(self.camera_idx)
+            if frame is None:
+                await asyncio.sleep(0.01)
+
+        if frame is None:
+            await asyncio.sleep(0.04)
+            frame = np.zeros((720, 1280, 3), dtype=np.uint8)
+
+        if not AIORTC_AVAILABLE or VideoFrame is None:
+            raise RuntimeError("aiortc/av dependency is unavailable")
+
+        video_frame = VideoFrame.from_ndarray(frame, format="bgr24")
+        video_frame.pts = self._pts
+        video_frame.time_base = self._time_base
+        self._pts += int(90000 / self._fps)
+        await asyncio.sleep(1.0 / self._fps)
+        return video_frame
 
 
 # Custom exception handler to suppress Windows connection reset errors
@@ -78,6 +131,10 @@ async def lifespan(app: FastAPI):
         yield
         
     finally:
+        close_tasks = [pc.close() for pc in list(pcs)]
+        if close_tasks:
+            await asyncio.gather(*close_tasks, return_exceptions=True)
+        pcs.clear()
         system.stop()
 
 
@@ -158,6 +215,45 @@ async def video_stream(camera_idx: int):
     )
 
 
+@app.post("/webrtc/offer/{camera_idx}")
+async def webrtc_offer(camera_idx: int, offer: WebRTCOffer):
+    """WebRTC SDP offer handler for low-latency H.264 streaming."""
+    system = get_system()
+    if camera_idx < 0 or camera_idx >= len(system.config.camera_sources):
+        raise HTTPException(status_code=404, detail="Camera index out of range")
+    if not AIORTC_AVAILABLE:
+        raise HTTPException(status_code=503, detail="WebRTC backend unavailable (aiortc not installed)")
+
+    pc = RTCPeerConnection()
+    pcs.add(pc)
+
+    @pc.on("connectionstatechange")
+    async def on_connectionstatechange():
+        if pc.connectionState in {"failed", "closed", "disconnected"}:
+            await pc.close()
+            pcs.discard(pc)
+
+    video_track = CameraVideoTrack(camera_idx)
+    transceiver = pc.addTransceiver(video_track, direction="sendonly")
+
+    # Prefer H.264 for efficient inter-frame compression on browser clients.
+    capabilities = RTCRtpSender.getCapabilities("video") if RTCRtpSender is not None else None
+    if capabilities and transceiver:
+        h264_codecs = [c for c in capabilities.codecs if c.mimeType.lower() == "video/h264"]
+        if h264_codecs:
+            transceiver.setCodecPreferences(h264_codecs)
+
+    remote_offer = RTCSessionDescription(sdp=offer.sdp, type=offer.type)
+    await pc.setRemoteDescription(remote_offer)
+    answer = await pc.createAnswer()
+    await pc.setLocalDescription(answer)
+
+    return {
+        "sdp": pc.localDescription.sdp,
+        "type": pc.localDescription.type
+    }
+
+
 @app.get("/api/status")
 async def get_status():
     """Full system status including all cameras"""
@@ -178,6 +274,12 @@ async def get_status():
     return {
         "status": "running" if system.running else "stopped",
         "cameras": cameras_status,
+        "streaming": {
+            "primary": "webrtc",
+            "fallback": "mjpeg",
+            "webrtc_available": AIORTC_AVAILABLE,
+            "active_peer_connections": len(pcs)
+        },
         "timestamp": datetime.now().isoformat()
     }
 
@@ -763,7 +865,7 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Detection Presets:
-  --preset 1    Default: YOLOv8-Face + BoT-SORT (conf=0.35, iou=0.45)
+  --preset 1    Default: YOLOv8-Face + ByteTrack (conf=0.35, iou=0.45)
   --preset 2    Alternative: YOLOv11-Face + ByteTrack (conf=0.30, iou=0.50)
 
 Examples:
@@ -782,7 +884,7 @@ Examples:
         type=int, 
         choices=[1, 2], 
         default=None, 
-        help="Detection preset (1=YOLOv8-Face+BoT-SORT, 2=YOLOv11-Face+ByteTrack)"
+        help="Detection preset (1=YOLOv8-Face+ByteTrack, 2=YOLOv11-Face+ByteTrack)"
     )
     
     args = parser.parse_args()

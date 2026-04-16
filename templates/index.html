@@ -94,6 +94,7 @@
         let selectedTile = null;
         let gridStartIdx = 0; // Starting camera index for current grid view
         let zoomedTileIdx = null;
+        const peerConnections = new Map();
 
         // Init icons
         lucide.createIcons();
@@ -126,6 +127,10 @@
         }
 
         function renderTiles(size) {
+            peerConnections.forEach((pc) => {
+                try { pc.close(); } catch {}
+            });
+            peerConnections.clear();
             const grid = document.getElementById('cameraGrid');
             grid.innerHTML = '';
             
@@ -142,7 +147,8 @@
                 
                 if (isCamera) {
                     tile.innerHTML = `
-                        <img id="stream-${camIdx}" src="/stream/${camIdx}" 
+                        <video id="stream-${camIdx}" autoplay muted playsinline></video>
+                        <img id="stream-fallback-${camIdx}" src="/stream/${camIdx}" style="display:none;"
                              onload="handleStreamLoad(${camIdx})" 
                              onerror="handleStreamError(${camIdx})">
                         <div class="camera-offline" style="display: none;">
@@ -169,9 +175,71 @@
                 }
                 
                 grid.appendChild(tile);
+                if (isCamera) startWebRTC(camIdx);
             }
             lucide.createIcons();
             updateStatus();
+        }
+
+        async function startWebRTC(camIdx) {
+            const videoEl = document.getElementById(`stream-${camIdx}`);
+            const fallbackEl = document.getElementById(`stream-fallback-${camIdx}`);
+            if (!videoEl) return;
+
+            if (peerConnections.has(camIdx)) {
+                try { peerConnections.get(camIdx).close(); } catch {}
+                peerConnections.delete(camIdx);
+            }
+
+            try {
+                const pc = new RTCPeerConnection();
+                peerConnections.set(camIdx, pc);
+                pc.addTransceiver('video', { direction: 'recvonly' });
+
+                pc.ontrack = (event) => {
+                    videoEl.srcObject = event.streams[0];
+                    videoEl.style.display = 'block';
+                    if (fallbackEl) fallbackEl.style.display = 'none';
+                    handleStreamLoad(camIdx);
+                };
+
+                pc.onconnectionstatechange = () => {
+                    if (['failed', 'disconnected', 'closed'].includes(pc.connectionState)) {
+                        startMJPEGFallback(camIdx);
+                    }
+                };
+
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+
+                const response = await fetch(`/webrtc/offer/${camIdx}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sdp: pc.localDescription.sdp,
+                        type: pc.localDescription.type
+                    })
+                });
+
+                if (!response.ok) throw new Error(`WebRTC signaling failed (${response.status})`);
+                const answer = await response.json();
+                await pc.setRemoteDescription(answer);
+            } catch (err) {
+                startMJPEGFallback(camIdx);
+            }
+        }
+
+        function startMJPEGFallback(camIdx) {
+            const videoEl = document.getElementById(`stream-${camIdx}`);
+            const fallbackEl = document.getElementById(`stream-fallback-${camIdx}`);
+            if (videoEl) {
+                videoEl.style.display = 'none';
+                videoEl.srcObject = null;
+            }
+            if (fallbackEl) {
+                fallbackEl.style.display = 'block';
+                fallbackEl.src = `/stream/${camIdx}?fallback=${Date.now()}`;
+            }
         }
 
         function selectTile(index) {
@@ -234,18 +302,23 @@
 
         // Stream Status
         function handleStreamLoad(idx) {
-            const img = document.getElementById('stream-' + idx);
-            if (!img) return;
-            img.style.display = 'block';
-            const offline = img.parentElement.querySelector('.camera-offline');
+            const video = document.getElementById('stream-' + idx);
+            const fallback = document.getElementById('stream-fallback-' + idx);
+            const container = video?.closest('.camera-tile') || fallback?.closest('.camera-tile');
+            if (!container) return;
+            if (video && video.srcObject) video.style.display = 'block';
+            if (fallback && !video?.srcObject) fallback.style.display = 'block';
+            const offline = container.querySelector('.camera-offline');
             if (offline) offline.style.display = 'none';
         }
 
         function handleStreamError(idx) {
-            const img = document.getElementById('stream-' + idx);
-            if (!img) return;
-            img.style.display = 'none';
-            const offline = img.parentElement.querySelector('.camera-offline');
+            const fallback = document.getElementById('stream-fallback-' + idx);
+            if (fallback) fallback.style.display = 'none';
+            const video = document.getElementById('stream-' + idx);
+            const container = video?.closest('.camera-tile') || fallback?.closest('.camera-tile');
+            if (!container) return;
+            const offline = container.querySelector('.camera-offline');
             if (offline && offline.style.display !== 'flex') {
                 offline.style.display = 'flex';
                 lucide.createIcons(); // Ensure icon is rendered
@@ -272,15 +345,20 @@
                 if (data.cameras) {
                     data.cameras.forEach((cam) => {
                         const img = document.getElementById(`stream-${cam.id}`);
-                        if (img) {
-                            const tile = img.closest('.camera-tile');
+                        const fallback = document.getElementById(`stream-fallback-${cam.id}`);
+                        const streamElement = img || fallback;
+                        if (streamElement) {
+                            const tile = streamElement.closest('.camera-tile');
                             if (tile) {
                                 const offline = tile.querySelector('.camera-offline');
                                 if (cam.state === 'online') {
                                     tile.classList.add('online');
                                     tile.classList.remove('offline');
                                     if (offline) offline.style.display = 'none';
-                                    if (img.style.display === 'none') img.style.display = 'block';
+                                    if (img && img.srcObject) img.style.display = 'block';
+                                    if (fallback && !img?.srcObject && fallback.style.display === 'none') {
+                                        fallback.style.display = 'block';
+                                    }
                                 } else {
                                     tile.classList.remove('online');
                                     tile.classList.add('offline');
@@ -288,7 +366,8 @@
                                         offline.style.display = 'flex';
                                         lucide.createIcons();
                                     }
-                                    img.style.display = 'none';
+                                    if (img) img.style.display = 'none';
+                                    if (fallback) fallback.style.display = 'none';
                                 }
                             }
                         }
@@ -298,6 +377,13 @@
             } catch (e) {}
         }
 
+        window.addEventListener('beforeunload', () => {
+            peerConnections.forEach((pc) => {
+                try { pc.close(); } catch {}
+            });
+            peerConnections.clear();
+        });
+
         // Initial render
         setGrid(4);
         setInterval(updateStatus, 5000);
@@ -305,4 +391,3 @@
     </script>
 </body>
 </html>
-

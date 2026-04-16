@@ -232,7 +232,17 @@ class EvidenceManager:
             - May create new key file if key_path doesn't exist
         """
         if self.vault is None:
-            self.vault = SecureVault(key_path=self.key_path)
+            envelope_enabled = os.getenv("ENVELOPE_ENCRYPTION_ENABLED", "true").lower() == "true"
+            has_kek = bool(os.getenv("EDGE_KMS_KEK_B64", "").strip())
+            if envelope_enabled and has_kek:
+                # Envelope mode uses KEK from KMS/secure injection and per-file DEK,
+                # so no static plaintext master key file is required.
+                self.vault = SecureVault(
+                    key=SecureVault.generate_key(),
+                    use_envelope=True
+                )
+            else:
+                self.vault = SecureVault(key_path=self.key_path, use_envelope=False)
             logger.info(f"[{self.prefix}] Encryption vault initialized")
     
     # ==========================================================================

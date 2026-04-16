@@ -34,7 +34,7 @@ Environment Variables:
 Presets:
     Preset 1 (Default):
         - Detector: YOLOv8-Face (nano)
-        - Tracker: BoT-SORT
+        - Tracker: ByteTrack
         - conf=0.35, iou=0.45
     
     Preset 2 (Alternative):
@@ -96,7 +96,7 @@ def load_presets(preset_file: str = "presets.yaml") -> Dict[int, Dict[str, Any]]
     Example:
         >>> presets = load_presets()
         >>> print(presets[1]["name"])
-        "Default (YOLOv8-Face + BoT-SORT)"
+        "Default (YOLOv8-Face + ByteTrack)"
     """
     try:
         import yaml
@@ -135,16 +135,16 @@ def _get_default_presets() -> Dict[int, Dict[str, Any]]:
     """
     return {
         1: {
-            "name": "Default (YOLOv8-Face + BoT-SORT)",
-            "description": "Balanced preset for general surveillance use",
+            "name": "Default (YOLOv8-Face + ByteTrack)",
+            "description": "Production-safe preset for RTX 3050 4GB edge profile",
             "detector": "yolov8n-face",
-            "tracker": "botsort",
+            "tracker": "bytetrack",
             "confidence": 0.35,
             "iou": 0.45
         },
         2: {
             "name": "Alternative (YOLOv11-Face + ByteTrack)",
-            "description": "Experimental preset with newer detector and faster tracker",
+            "description": "Alternative preset with newer detector and ByteTrack",
             "detector": "yolov11n-face",
             "tracker": "bytetrack",
             "confidence": 0.30,
@@ -245,7 +245,13 @@ class Config:
         # Store preset attributes
         self.preset_name = preset.get("name", f"Preset {preset_id}")
         self.detector = preset.get("detector", "yolov8n-face")
-        self.tracker = preset.get("tracker", "botsort")
+        self.tracker = preset.get("tracker", "bytetrack")
+        if str(self.tracker).lower() != "bytetrack":
+            logger.warning(
+                "Tracker '%s' is not allowed for production edge profile; forcing ByteTrack.",
+                self.tracker
+            )
+            self.tracker = "bytetrack"
         
         # Log preset loading
         logger.info("=" * 60)

@@ -15,7 +15,7 @@
 #   3. Default (no argument): Uses Preset 1
 #
 # Available Presets:
-#   - Preset 1 (Default): YOLOv8-Face with BoT-SORT tracker
+#   - Preset 1 (Default): YOLOv8-Face with ByteTrack tracker
 #   - Preset 2 (Alternative): YOLOv11-Face with ByteTrack tracker
 # ================================================================================
 
@@ -25,12 +25,12 @@ presets:
   # ============================================================================
   # Best for general surveillance with balanced accuracy and speed.
   # Uses YOLOv8-Face model trained on WIDER Face dataset.
-  # BoT-SORT tracker provides robust multi-object tracking.
+  # ByteTrack keeps VRAM usage safer on 4GB edge GPU profiles.
   1:
-    name: "Default (YOLOv8-Face + BoT-SORT)"
-    description: "Balanced preset for general surveillance use"
+    name: "Default (YOLOv8-Face + ByteTrack)"
+    description: "Production-safe preset for RTX 3050 4GB edge profile"
     detector: "yolov8n-face"      # YOLOv8-Face nano model
-    tracker: "botsort"            # BoT-SORT tracker
+    tracker: "bytetrack"          # ByteTrack tracker (production-safe)
     confidence: 0.35              # Detection confidence threshold
     iou: 0.45                     # IoU threshold for NMS/tracking
 
@@ -42,7 +42,7 @@ presets:
   # ByteTrack provides efficient online multi-object tracking.
   2:
     name: "Alternative (YOLOv11-Face + ByteTrack)"
-    description: "Experimental preset with newer detector and faster tracker"
+    description: "Alternative preset with newer detector and ByteTrack"
     detector: "yolov11n-face"     # YOLOv11-Face nano model (alternative)
     tracker: "bytetrack"          # ByteTrack tracker
     confidence: 0.30              # Lower confidence for more detections

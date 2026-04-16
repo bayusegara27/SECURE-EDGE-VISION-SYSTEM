@@ -54,7 +54,7 @@
 
 ### 🤖 Intelligent AI Engine
 
-- **Face Anonymization**: Secara otomatis memburamkan wajah pada _public stream_ menggunakan YOLOv8 & Gaussian Blur.
+- **Face Anonymization**: Blur wajah 51x51 berjalan **GPU-first (cv2.cuda)** dengan fallback CPU darurat dan adaptive kernel saat GPU pressure naik.
 - **Selective Recording**: Hanya menyimpan rekaman jika terdapat deteksi, menghemat penyimpanan hingga **80%**.
 - **GPU Accelerated**: Dioptimalkan untuk NVIDIA CUDA untuk performa minimal 25-30 FPS.
 
@@ -99,7 +99,7 @@ graph TD
         Split["Dual-Path Split"]:::process
 
         subgraph PublicPath ["Public Path"]
-            Blur["Gaussian Blur<br/>51x51"]
+            Blur["CUDA Gaussian Blur<br/>51x51 (Adaptive)"]
             MP4["Public MP4<br/>H.264"]
         end
 
@@ -110,7 +110,7 @@ graph TD
     end
 
     subgraph OutputLayer ["OUTPUT LAYER"]
-        Dash["Web Dashboard<br/>FastAPI + MJPEG"]:::output
+        Dash["Web Dashboard<br/>FastAPI + WebRTC (H.264)<br/>MJPEG Fallback"]:::output
         Anal["Analytics<br/>Chart.js"]:::output
         Decr["Decryption Tool<br/>Admin Only"]:::output
     end
@@ -205,7 +205,7 @@ Sistem mendukung **2 preset deteksi** yang dapat dipilih tanpa mengubah kode:
 ### Preset 1 (Default)
 
 - **Detector**: YOLOv8-Face (nano)
-- **Tracker**: BoT-SORT
+- **Tracker**: ByteTrack
 - **Confidence**: 0.35
 - **IoU**: 0.45
 
@@ -253,7 +253,8 @@ PUBLIC_RECORDINGS_PATH=recordings/public
 EVIDENCE_RECORDINGS_PATH=recordings/evidence
 
 # Security
-ENCRYPTION_KEY_PATH=keys/master.key
+ENVELOPE_ENCRYPTION_ENABLED=true
+EDGE_KMS_KEK_B64=<base64-32-byte-kek>
 ```
 
 ---
@@ -263,7 +264,7 @@ ENCRYPTION_KEY_PATH=keys/master.key
 - **Algorithm**: AES-256-GCM (Authenticated Encryption).
 - **Integrity**: SHA-256 binary hash checking pada setiap package.
 - **Anti-Tampering Control**: Verifikasi digital signature sebelum dekripsi data bukti.
-- **Key Management**: Kunci AES dienkripsi dengan Master PIN saat penyimpanan.
+- **Key Management**: Envelope Encryption (DEK unik per evidence) + KEK ter-injeksi aman (KMS/TPM trust path), tanpa ketergantungan master key plaintext statis.
 
 ---
 
