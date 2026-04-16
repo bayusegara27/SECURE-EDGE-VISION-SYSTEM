@@ -73,6 +73,7 @@ class CameraVideoTrack(MediaStreamTrack):
         super().__init__()
         self.camera_idx = camera_idx
         self._pts = 0
+        # WebRTC/RTP video timestamps commonly use 90kHz clock for H.264.
         self._time_base = Fraction(1, 90000)
         self._fps = 25
 
@@ -133,7 +134,10 @@ async def lifespan(app: FastAPI):
     finally:
         close_tasks = [pc.close() for pc in list(pcs)]
         if close_tasks:
-            await asyncio.gather(*close_tasks, return_exceptions=True)
+            results = await asyncio.gather(*close_tasks, return_exceptions=True)
+            for result in results:
+                if isinstance(result, Exception):
+                    logger.warning(f"Peer connection close error: {result}")
         pcs.clear()
         system.stop()
 
@@ -224,7 +228,11 @@ async def webrtc_offer(camera_idx: int, offer: WebRTCOffer):
     if not AIORTC_AVAILABLE:
         raise HTTPException(status_code=503, detail="WebRTC backend unavailable (aiortc not installed)")
 
-    pc = RTCPeerConnection()
+    ice_servers = []
+    stun_url = os.getenv("WEBRTC_STUN_URL", "").strip()
+    if stun_url:
+        ice_servers = [{"urls": stun_url}]
+    pc = RTCPeerConnection({"iceServers": ice_servers} if ice_servers else None)
     pcs.add(pc)
 
     @pc.on("connectionstatechange")

@@ -241,6 +241,11 @@ class EvidenceManager:
                     key=SecureVault.generate_key(),
                     use_envelope=True
                 )
+            elif envelope_enabled and not has_kek:
+                raise RuntimeError(
+                    "ENVELOPE_ENCRYPTION_ENABLED=true but EDGE_KMS_KEK_B64 is missing. "
+                    "Refusing to downgrade to legacy key mode (fail-secure)."
+                )
             else:
                 self.vault = SecureVault(key_path=self.key_path, use_envelope=False)
             logger.info(f"[{self.prefix}] Encryption vault initialized")

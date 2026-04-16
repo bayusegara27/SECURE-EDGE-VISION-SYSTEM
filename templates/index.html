@@ -232,6 +232,10 @@
         function startMJPEGFallback(camIdx) {
             const videoEl = document.getElementById(`stream-${camIdx}`);
             const fallbackEl = document.getElementById(`stream-fallback-${camIdx}`);
+            if (peerConnections.has(camIdx)) {
+                try { peerConnections.get(camIdx).close(); } catch {}
+                peerConnections.delete(camIdx);
+            }
             if (videoEl) {
                 videoEl.style.display = 'none';
                 videoEl.srcObject = null;

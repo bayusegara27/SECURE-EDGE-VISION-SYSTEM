@@ -128,16 +128,15 @@ class SecureVault:
         
         self.aesgcm = AESGCM(self._key)
         self.use_envelope = (
-            os.getenv("ENVELOPE_ENCRYPTION_ENABLED", "true").lower() == "true"
+            os.getenv("ENVELOPE_ENCRYPTION_ENABLED", "false").lower() == "true"
             if use_envelope is None
             else use_envelope
         )
         self._kek = kek if kek is not None else self._load_kek_from_env(kek_env_var)
         if self.use_envelope and self._kek is None:
-            logger.warning(
-                "Envelope mode requested but KEK is unavailable; falling back to legacy static-key mode."
+            raise ValueError(
+                "Envelope mode enabled but KEK is unavailable. Inject EDGE_KMS_KEK_B64 or disable envelope mode."
             )
-            self.use_envelope = False
 
     @classmethod
     def _load_kek_from_env(cls, env_name: str) -> Optional[bytes]:

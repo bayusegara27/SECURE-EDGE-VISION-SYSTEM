@@ -365,8 +365,7 @@ class FrameProcessor:
                     else:
                         blurred_roi = self._apply_blur_cpu(roi, kernel)
                 except Exception as e:
-                    if self._cuda_blur_available:
-                        logger.warning(f"GPU blur failed, switching to CPU fallback: {e}")
+                    logger.warning(f"Blur pipeline fallback to CPU due to error: {e}")
                     self._cuda_blur_available = False
                     self.blur_mode = "cpu-fallback"
                     blurred_roi = self._apply_blur_cpu(roi, kernel)
